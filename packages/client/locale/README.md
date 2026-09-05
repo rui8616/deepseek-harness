@@ -1,5 +1,5 @@
 ---
-description: "Localization for the web GUI: the zh/en preference, browser-derived fallback, typed namespace dictionaries, and the framework translation seat, for users and plugin authors."
+description: "Localization for the web GUI: the zh/en/ja preference, browser-derived fallback, typed namespace dictionaries, and the framework translation seat, for users and plugin authors."
 kind: "package-reference"
 ---
 
@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-`dsh-client-locale` localizes the web GUI: users choose from the registered languages in Settings → General, and the UI copy switches immediately. The package ships `zh` and `en`, while external client plugins can add languages and their namespace dictionaries. On a loopback page, the choice persists as `locale.preference` in `$DSH_HOME/settings.yaml`; a non-loopback page keeps its selection process-local even though Connection authenticates every API method. A fresh browser starts provisionally in the first registered language requested by `navigator` until an allowed Host preference arrives and replaces it live. Plugin authors receive full type checking for the built-in dictionary form and translate through the framework `t` seat; copy rendered through slots follows language switches without a reload.
+`dsh-client-locale` localizes the web GUI: users choose from the registered languages in Settings → General, and the UI copy switches immediately. The package ships `zh`, `en`, and `ja`, while external client plugins can add languages and their namespace dictionaries. On a loopback page, the choice persists as `locale.preference` in `$DSH_HOME/settings.yaml`; a non-loopback page keeps its selection process-local even though Connection authenticates every API method. A fresh browser starts provisionally in the first registered language requested by `navigator` until an allowed Host preference arrives and replaces it live. Plugin authors receive full type checking for the built-in dictionary form and translate through the framework `t` seat; copy rendered through slots follows language switches without a reload.
 
 ## Table of Contents
 
@@ -33,7 +33,7 @@ Open Settings → General and select a registered language. The active locale is
 
 ### Registering a dictionary
 
-Call `ctx.locale.register(ns, { zh, en })` with a namespace merged into `LocaleNamespaceMap`; the compiler checks every key against the namespace's typed key union and requires both shipped locales. Consumers translate through `ctx.locale.bind(ns)` or the framework-injected `t` seat. A dictionary registered after the UI is already mounted is picked up without a remount.
+Call `ctx.locale.register(ns, { zh, en, ja })` with a namespace merged into `LocaleNamespaceMap`; the compiler checks every key against the namespace's typed key union and requires every shipped locale. Consumers translate through `ctx.locale.bind(ns)` or the framework-injected `t` seat. A dictionary registered after the UI is already mounted is picked up without a remount.
 
 ### Registering a language pack
 
@@ -44,13 +44,13 @@ export const inject = ['locale']
 
 export function apply(ctx) {
   ctx.effect(
-    () => ctx.locale.addLanguage({ id: 'ja', label: '日本語', fallback: 'en' }),
+    () => ctx.locale.addLanguage({ id: 'ko', label: '한국어', fallback: 'en' }),
     'my-locale: language',
   )
   ctx.effect(
-    () => ctx.locale.register('common', 'ja', {
-      cancel: 'キャンセル',
-      close: '閉じる',
+    () => ctx.locale.register('common', 'ko', {
+      cancel: '취소',
+      close: '닫기',
     }),
     'my-locale: common dictionary',
   )
@@ -83,7 +83,7 @@ The provisional locale comes from the browser (`navigator.languages` matched by 
 
 ### Dictionary lookup
 
-The typed object form requires complete dictionaries for both built-in locales. The per-locale form lets language packs register each namespace independently. For each key, lookup walks the active language's declared fallback chain in the requested namespace, repeats that chain in `common`, then displays the key itself. Bound translate functions retain stable identity per namespace so they can ride inject surfaces without breaking memoization.
+The typed object form requires a complete dictionary for every built-in locale. The per-locale form lets language packs register each namespace independently. For each key, lookup walks the active language's declared fallback chain in the requested namespace, repeats that chain in `common`, then displays the key itself. Bound translate functions retain stable identity per namespace so they can ride inject surfaces without breaking memoization.
 
 ### Source map
 
@@ -92,7 +92,7 @@ The typed object form requires complete dictionaries for both built-in locales. 
 | [`src/client/index.ts`](src/client/index.ts) | `LocaleRuntime`, dictionary registry, Language row registration, `locale/change` event |
 | [`src/index.ts`](src/index.ts) | Node half: registers the `locale` settings namespace |
 | [`src/locale-settings.ts`](src/locale-settings.ts) | The durable schema for `locale.preference` |
-| [`src/locales/`](src/locales/) | The shipped `zh`/`en` dictionaries |
+| [`src/locales/`](src/locales/) | The shipped `zh`/`en`/`ja` dictionaries |
 
 </details>
 

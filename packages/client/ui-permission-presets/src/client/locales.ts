@@ -61,3 +61,31 @@ export const accessEn = {
   'confirm.cancel': 'Cancel',
   'confirm.enable': 'Enable Full access',
 } satisfies Record<PermissionAccessKey, string>
+
+/** Japanese dictionary, checked complete against the zh key set. */
+export const ja = {
+  'title': '権限',
+  'description': '新しいセッションの既定の権限モードを選択',
+  'loading': '読み込み中',
+  'unavailable': '利用できません',
+  'preset.readOnly': '閲覧のみ',
+  'preset.workspaceWrite': 'ワークスペース内で変更',
+  'preset.fullAccess': 'フルアクセス',
+  'confirm.title': 'フルアクセスを有効にしますか？',
+  'confirm.description': 'フルアクセスを有効にすると、新しいセッションでは確認の手順が減り、機微な操作、ファイルの変更、外部コマンドの実行を含む多くの操作を直接実行できるようになります。以降のタスクを信頼できる場合にのみ使用してください。',
+  'confirm.acknowledge': 'リスクを理解した上で続行します',
+  'confirm.cancel': 'キャンセル',
+  'confirm.enable': 'フルアクセスを有効にする',
+} satisfies Record<PermissionSettingsKey, string>
+
+/** Japanese dictionary for the current-session popup gate. */
+export const accessJa = {
+  'preset.readOnly': '閲覧のみ',
+  'preset.workspaceWrite': 'ワークスペース内で変更',
+  'preset.fullAccess': 'フルアクセス',
+  'confirm.title': 'フルアクセスを有効にしますか？',
+  'confirm.description': 'フルアクセスを有効にすると、エージェントは確認の手順を減らし、機微な操作、ファイルの変更、外部コマンドの実行を含む多くの操作を直接実行できるようになります。現在のタスクを信頼できる場合にのみ使用してください。',
+  'confirm.acknowledge': 'リスクを理解した上で続行します',
+  'confirm.cancel': 'キャンセル',
+  'confirm.enable': 'フルアクセスを有効にする',
+} satisfies Record<PermissionAccessKey, string>

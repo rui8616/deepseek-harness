@@ -28,3 +28,16 @@ export const en = {
   'fontSize.increase': 'Increase font size',
   'fontSize.decrease': 'Decrease font size',
 } satisfies Record<ThemeKey, string>
+
+/** Japanese dictionary, checked complete against the zh key set. */
+export const ja = {
+  'appearance.title': '外観',
+  'appearance.light': 'ライト',
+  'appearance.dark': 'ダーク',
+  'appearance.system': 'システムに従う',
+  'fontSize.title': '文字サイズ',
+  'fontSize.description': '会話内容の文字サイズのみに適用されます',
+  'fontSize.unit': 'px',
+  'fontSize.increase': '文字を大きく',
+  'fontSize.decrease': '文字を小さく',
+} satisfies Record<ThemeKey, string>

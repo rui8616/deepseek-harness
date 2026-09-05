@@ -55,7 +55,7 @@ kind: "package-reference"
 
 ### 文案与 locale
 
-编辑器外框文案（翻页器、按钮、占位符、校验提示）是双语的：插件在 `dsh-client-locale` 的 `question` 命名空间下注册 zh/en 词典，并通过 inject face 把绑定的翻译函数和 locale 快照源交给该条目，因此切换语言会重新渲染已挂载的编辑器。问题与选项文本来自模型并原样渲染；载体失败消息也不经翻译直接显示。
+编辑器外框文案（翻页器、按钮、占位符、校验提示）归 locale 所有：插件在 `dsh-client-locale` 的 `question` 命名空间下注册 zh/en/ja 词典，并通过 inject face 把绑定的翻译函数和 locale 快照源交给该条目，因此切换语言会重新渲染已挂载的编辑器。问题与选项文本来自模型并原样渲染；载体失败消息也不经翻译直接显示。
 
 </details>
 

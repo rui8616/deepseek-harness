@@ -27,3 +27,14 @@ export const en = {
   'row.inspect': 'Inspect',
   'menu.userOnly': 'user-only',
 } satisfies Record<SkillKey, string>
+
+/** Japanese dictionary, checked complete against the zh key set. */
+export const ja = {
+  'row.title': 'Skill',
+  'row.running': 'skill を読み込み中',
+  'row.failed': 'skill の読み込みに失敗しました',
+  'row.stopped': 'skill の読み込みを中止しました',
+  'row.instructions': '説明',
+  'row.inspect': '表示',
+  'menu.userOnly': 'ユーザーのみ',
+} satisfies Record<SkillKey, string>

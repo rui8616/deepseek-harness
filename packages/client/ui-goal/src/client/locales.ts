@@ -32,3 +32,18 @@ export const en = {
   'action.edit': 'Edit goal',
   'action.clear': 'Clear goal',
 } satisfies Record<GoalKey, string>
+
+/** Japanese dictionary, checked complete against the zh key set. */
+export const ja = {
+  'phase.active': '進行中のゴール',
+  'phase.paused': '一時停止中のゴール',
+  'phase.blocked': 'ブロック中のゴール',
+  'objective.aria': 'ゴールの内容',
+  'commandInput.aria': 'コマンド入力',
+  'action.save': 'ゴールを保存',
+  'action.cancel': '編集をキャンセル',
+  'action.pause': 'ゴールを一時停止',
+  'action.resume': 'ゴールを再開',
+  'action.edit': 'ゴールを編集',
+  'action.clear': 'ゴールをクリア',
+} satisfies Record<GoalKey, string>

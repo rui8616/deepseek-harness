@@ -18,9 +18,9 @@ import {
   LOCALE_ID_PATTERN, LOCALE_IDS, LOCALE_PREFERENCE_FIELD, LOCALE_SETTINGS_NAMESPACE,
   type BuiltInLocaleId, type LocaleId, type LocaleSettings,
 } from '../locale-settings.ts'
-import { en, zh, type CommonKey } from '../locales/index.ts'
+import { en, ja, zh, type CommonKey } from '../locales/index.ts'
 import {
-  en as settingsEn, zh as settingsZh, type SettingsLocaleKey,
+  en as settingsEn, ja as settingsJa, zh as settingsZh, type SettingsLocaleKey,
 } from '../locales/settings.ts'
 import type { LanguageRowInjected } from './LanguageRow.tsx'
 import { LanguageRow } from './LanguageRow.tsx'
@@ -56,6 +56,8 @@ export interface LanguageRegistration {
   label: string
   /** Registered language consulted when this language lacks a dictionary key. */
   fallback: LocaleId
+  /** `<html lang>` value when the id is not itself the right document tag; the id is used when absent. */
+  documentLang?: string
 }
 
 /** One normalized selectable locale published in snapshots. */
@@ -66,6 +68,8 @@ export interface LocaleDefinition {
   readonly label: string
   /** Next language in the per-key fallback chain; absent only for English. */
   readonly fallback?: LocaleId
+  /** `<html lang>` value when the id is not itself the right document tag; the id is used when absent. */
+  readonly documentLang?: string
 }
 
 /** Immutable locale state published on every change. */
@@ -98,11 +102,11 @@ declare module '@deepseek-ai/cordis' {
 /**
  * English is both the locale the UI opens in when the browser names no registered
  * language (and for non-browser runs), and the dictionary consulted after the
- * active locale misses a key. One constant serves both because the shipped
- * `zh`/`en` dictionaries carry identical key sets, so neither direction can
- * leave a key unresolved; the residual case points at English rather than
- * zh because a browser naming no registered language is the reader least
- * likely to read Chinese.
+ * active locale misses a key. One constant serves both because every shipped
+ * dictionary declares one key set across all of {@link LOCALE_IDS}, so no
+ * built-in locale can leave a key unresolved; the residual case points at
+ * English rather than another built-in because a browser naming no registered
+ * language is the reader least likely to read Chinese or Japanese.
  */
 export const FALLBACK_LOCALE: BuiltInLocaleId = 'en'
 
@@ -112,10 +116,11 @@ export const COMMON_NS = 'common'
 /** Namespace owning this feature's settings-row copy. */
 export const SETTINGS_NS = 'settings.locale'
 
-/** The two locales and dictionaries shipped by this package. */
+/** The three locales and dictionaries shipped by this package. */
 const BUILT_IN_LOCALE_METADATA = {
-  zh: { label: '中文', fallback: 'en' },
+  zh: { label: '中文', fallback: 'en', documentLang: 'zh-CN' },
   en: { label: 'English' },
+  ja: { label: '日本語', fallback: 'en' },
 } as const satisfies Record<BuiltInLocaleId, Omit<LocaleDefinition, 'id'>>
 const BUILT_IN_LOCALES: readonly LocaleDefinition[] = Object.freeze(
   LOCALE_IDS.map(id => Object.freeze({ id, ...BUILT_IN_LOCALE_METADATA[id] })),
@@ -135,7 +140,18 @@ function normalizeLanguage(input: LanguageRegistration): Readonly<LanguageRegist
   if (!LOCALE_ID_PATTERN.test(input.fallback)) {
     throw new Error(`locale fallback "${input.fallback}" is not a BCP 47-style tag`)
   }
-  return Object.freeze({ id: input.id, label: input.label, fallback: input.fallback })
+  if (input.documentLang !== undefined && !LOCALE_ID_PATTERN.test(input.documentLang)) {
+    throw new Error(`locale documentLang "${input.documentLang}" is not a BCP 47-style tag`)
+  }
+  // Assigned rather than spread: `exactOptionalPropertyTypes` rejects a
+  // conditional spread here, which widens the property to `string | undefined`.
+  const normalized: LanguageRegistration = {
+    id: input.id,
+    label: input.label,
+    fallback: input.fallback,
+  }
+  if (input.documentLang !== undefined) normalized.documentLang = input.documentLang
+  return Object.freeze(normalized)
 }
 
 /**
@@ -146,7 +162,10 @@ function normalizeLanguage(input: LanguageRegistration): Readonly<LanguageRegist
 function syncDocumentLanguage(snapshot: LocaleSnapshot): void {
   // Non-browser runs (node boots of the client tree) have no document.
   if (typeof document === 'undefined') return
-  document.documentElement.lang = snapshot.active === 'zh' ? 'zh-CN' : snapshot.active
+  /* v8 ignore next -- en is a built-in that cannot be unregistered, so the
+   * active id always resolves to a definition in the published catalog. */
+  const active = snapshot.locales.find(locale => locale.id === snapshot.active)
+  document.documentElement.lang = active?.documentLang ?? snapshot.active
 }
 
 /**
@@ -539,8 +558,8 @@ export const inject = ['slots', 'remote', 'settingsScope']
 export function apply(ctx: ClientContext): void {
   const host = ctx.settingsScope.bind<LocaleSettings>({ namespace: LOCALE_SETTINGS_NAMESPACE })
   const locale = new LocaleRuntime(ctx, host)
-  locale.register(COMMON_NS, { zh, en })
-  locale.register(SETTINGS_NS, { zh: settingsZh, en: settingsEn })
+  locale.register(COMMON_NS, { zh, en, ja })
+  locale.register(SETTINGS_NS, { zh: settingsZh, en: settingsEn, ja: settingsJa })
   ctx.provide('locale', locale)
   // The service IS the LocaleFace (bind + getSnapshot/subscribe): install it
   // so the render machinery can synthesize the `t` standard seat.

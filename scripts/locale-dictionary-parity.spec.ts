@@ -1,14 +1,14 @@
 /**
  * Gate for the invariant `FALLBACK_LOCALE` rests on: every shipped dictionary
- * declares the same keys in `zh` and `en`.
+ * declares one key set across every built-in locale.
  *
  * The locale runtime resolves a key through the active locale, then through
  * the single fallback locale (`en`), then surfaces the key itself. With
  * symmetric dictionaries that middle step always resolves, so one constant can
  * serve as both the opening locale and the dictionary fallback. A key added to
- * only one side breaks that: a reader of the other language sees a bare key
- * such as `list.aria` instead of text. This gate fails on the asymmetry rather
- * than waiting for the bare key to reach a UI.
+ * only some locales breaks that: a reader of a language missing it sees a bare
+ * key such as `list.aria` instead of text. This gate fails on the asymmetry
+ * rather than waiting for the bare key to reach a UI.
  *
  * Discovery is deliberately broad, because a gate that silently narrows is
  * worse than no gate. It sweeps every workspace package (not just
@@ -25,6 +25,35 @@ import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import ts from 'typescript'
 import { describe, expect, it } from 'vitest'
+
+/**
+ * Built-in locale ids, mirroring `LOCALE_IDS` in dsh-client-locale. Every
+ * discovered dictionary must declare all of them; the first is the key-set
+ * source of truth the others are measured against (Chinese-first repo
+ * convention). Each id is two characters, which `localeOf` relies on when it
+ * splits a prefixed or suffixed dictionary name.
+ */
+const SHIPPED_LOCALES = ['zh', 'en', 'ja'] as const
+
+/** One built-in locale id. */
+type ShippedLocale = typeof SHIPPED_LOCALES[number]
+
+/** The locale whose key set the others are compared against. */
+const BASE_LOCALE: ShippedLocale = 'zh'
+
+/** The capitalized suffix form of a locale id (`zh` to `Zh`), as used in `settingsZh`. */
+function suffixForm(locale: ShippedLocale): string {
+  return (locale[0] ?? '').toUpperCase() + locale.slice(1)
+}
+
+/**
+ * Whether a string literal names a built-in locale.
+ * @param value - the literal text of a registration's locale argument.
+ * @returns true when the value is one of {@link SHIPPED_LOCALES}.
+ */
+function isShippedLocale(value: string): value is ShippedLocale {
+  return (SHIPPED_LOCALES as readonly string[]).includes(value)
+}
 
 const root = fileURLToPath(new URL('..', import.meta.url))
 
@@ -96,9 +125,9 @@ function dictionariesIn(file: string): Dictionary[] {
   // Cheap pre-filter: parsing every package source is wasteful. The pattern
   // must admit every shape `localeOf` accepts, or a file would be skipped
   // before parsing — the silent narrowing this gate exists to prevent. A bare
-  // `\b(zh|en)\b` misses `zhSettings`/`accessZh`, because `\b` does not hold
+  // `\b(zh|en|ja)\b` misses `zhSettings`/`accessZh`, because `\b` does not hold
   // between `h` and an uppercase letter.
-  if (!/\b(zh|en)\b|\b(zh|en)[A-Z]|(Zh|En)\b/.test(text)) return []
+  if (!/\b(zh|en|ja)\b|\b(zh|en|ja)[A-Z]|(Zh|En|Ja)\b/.test(text)) return []
   const source = ts.createSourceFile(file, text, ts.ScriptTarget.ESNext, true)
   const found: Dictionary[] = []
   const rel = relative(file)
@@ -137,10 +166,10 @@ function dictionariesIn(file: string): Dictionary[] {
     throw new Error(`cannot verify register('${ns}', '${tag}', ...) in ${rel}: ${why}`)
   }
 
-  // Inline registrations, two shapes. A `[['zh', {...}], ['en', {...}]]` pair
-  // handed to a registration loop keys off the enclosing array; separate
+  // Inline registrations, two shapes. A `[['zh', {...}], ['en', {...}], …]`
+  // table handed to a registration loop keys off the enclosing array; separate
   // `register(NS, 'zh', {...})` / `register(NS, 'en', {...})` calls key off the
-  // namespace argument, so the two calls pair with each other.
+  // namespace argument, so those calls group with each other.
   const visit = (node: ts.Node): void => {
     if (ts.isCallExpression(node)) {
       const callee = node.expression
@@ -150,7 +179,7 @@ function dictionariesIn(file: string): Dictionary[] {
       if (name === 'register' && node.arguments.length >= 3) {
         const [ns, tag, dict] = node.arguments
         if (ns === undefined || tag === undefined || !ts.isStringLiteral(tag)) return
-        if (tag.text !== 'zh' && tag.text !== 'en') return
+        if (!isShippedLocale(tag.text)) return
         const raw = unwrap(dict)
         const literal = raw !== undefined && ts.isIdentifier(raw)
           ? (() => {
@@ -174,7 +203,7 @@ function dictionariesIn(file: string): Dictionary[] {
         found.push({ file: rel, name: `${tag.text}@register:${ns.getText(source)}`, keys: keysOf(dictionary) })
       }
     }
-    if (ts.isArrayLiteralExpression(node) && node.elements.length === 2) {
+    if (ts.isArrayLiteralExpression(node) && node.elements.length === SHIPPED_LOCALES.length) {
       const site = source.getLineAndCharacterOfPosition(node.getStart(source)).line + 1
       for (const element of node.elements) {
         if (!ts.isArrayLiteralExpression(element) || element.elements.length !== 2) continue
@@ -182,7 +211,7 @@ function dictionariesIn(file: string): Dictionary[] {
         const literal = unwrap(dict)
         if (tag === undefined || !ts.isStringLiteral(tag)) continue
         if (literal === undefined || !ts.isObjectLiteralExpression(literal)) continue
-        if (tag.text !== 'zh' && tag.text !== 'en') continue
+        if (!isShippedLocale(tag.text)) continue
         found.push({ file: rel, name: `${tag.text}@inline:${site}`, keys: keysOf(literal) })
       }
     }
@@ -216,17 +245,19 @@ function unwrap(node: ts.Expression | undefined): ts.Expression | undefined {
 
 /**
  * The locale a dictionary name declares, and the namespace-ish remainder that
- * identifies which pair it belongs to. `zh`/`en`, `zhSettings`/`enSettings`,
- * and `settingsZh`/`settingsEn` are the shapes this repo uses. A name-prefix
- * shape requires an uppercase ASCII letter at the third position (`[A-Z]`),
+ * identifies which group it belongs to. `zh`/`en`/`ja`, `zhSettings`, and
+ * `settingsZh`/`accessJa` are the shapes this repo uses. A name-prefix shape
+ * requires an uppercase ASCII letter at the third position (`[A-Z]`),
  * matching the admission of the cheap pre-filter, so `zh2Foo`/`zh_probe`
  * cannot be treated as dictionaries in one place and skipped in another.
+ * Every id in {@link SHIPPED_LOCALES} is two characters, so the prefix and
+ * suffix slices below hold for all of them.
  * @param name - export name or synthetic inline name.
- * @returns locale plus pair key, or undefined when the name names no locale.
+ * @returns locale plus group key, or undefined when the name names no locale.
  */
-function localeOf(name: string): { locale: 'zh' | 'en'; pair: string } | undefined {
-  for (const locale of ['zh', 'en'] as const) {
-    const other = locale === 'zh' ? 'Zh' : 'En'
+function localeOf(name: string): { locale: ShippedLocale; pair: string } | undefined {
+  for (const locale of SHIPPED_LOCALES) {
+    const other = suffixForm(locale)
     if (name === locale) return { locale, pair: '' }
     // Synthetic names for inline shapes carry their own pair key after the
     // first ':' (the enclosing array's line, or the namespace expression).
@@ -240,7 +271,7 @@ function localeOf(name: string): { locale: 'zh' | 'en'; pair: string } | undefin
 }
 
 describe('shipped locale dictionaries', () => {
-  it('declares the same keys in zh and en, so the single fallback locale always resolves', () => {
+  it('declares one key set across every built-in locale, so the single fallback locale always resolves', () => {
     const files = sourceFiles()
     // Guard the discovery itself: an empty or narrowed sweep would pass every
     // assertion below while checking nothing.
@@ -256,9 +287,9 @@ describe('shipped locale dictionaries', () => {
       if (dicts.length > 0) perFile.set(relative(file), dicts)
     }
 
-    const groups = new Map<string, Map<'zh' | 'en', Dictionary>>()
-    const place = (key: string, locale: 'zh' | 'en', dict: Dictionary): void => {
-      const slot = groups.get(key) ?? new Map<'zh' | 'en', Dictionary>()
+    const groups = new Map<string, Map<ShippedLocale, Dictionary>>()
+    const place = (key: string, locale: ShippedLocale, dict: Dictionary): void => {
+      const slot = groups.get(key) ?? new Map<ShippedLocale, Dictionary>()
       if (slot.has(locale)) {
         throw new Error(`two ${locale} dictionaries claim pair ${key}: ${slot.get(locale)?.file} and ${dict.file}`)
       }
@@ -276,33 +307,43 @@ describe('shipped locale dictionaries', () => {
             && otherParsed.pair === parsed.pair
             && otherParsed.locale !== parsed.locale
         })
-        // Same-file pairs key by file so two pairs in one directory stay
-        // distinct; split pairs key by directory so siblings meet.
+        // Same-file groups key by file so two groups in one directory stay
+        // distinct; split groups key by directory so siblings meet.
         const key = sameFileCounterpart ? `${rel}::${parsed.pair}` : `${dirname(rel)}::${parsed.pair}`
         place(key, parsed.locale, dict)
       }
     }
 
     const problems: string[] = []
-    let comparedPairs = 0
+    let comparedGroups = 0
     for (const [key, slot] of [...groups].sort()) {
-      const zh = slot.get('zh')
-      const en = slot.get('en')
-      if (zh === undefined || en === undefined) {
-        const present = zh ?? en
-        problems.push(`${present?.file} declares ${present?.name} with no counterpart for pair ${key}`)
+      const absent = SHIPPED_LOCALES.filter(locale => !slot.has(locale))
+      if (absent.length > 0) {
+        const present = [...slot.values()][0]
+        problems.push(`${present?.file} declares ${present?.name} with no counterpart for ${absent.join(', ')} in group ${key}`)
         continue
       }
-      comparedPairs++
-      const zhOnly = zh.keys.filter(k => !en.keys.includes(k))
-      const enOnly = en.keys.filter(k => !zh.keys.includes(k))
-      if (zhOnly.length > 0) problems.push(`${zh.file} ${zh.name} has keys absent from ${en.name}: ${zhOnly.join(', ')}`)
-      if (enOnly.length > 0) problems.push(`${en.file} ${en.name} has keys absent from ${zh.name}: ${enOnly.join(', ')}`)
+      comparedGroups++
+      // Every locale is measured against the base rather than against its
+      // neighbour, so one report names the dictionary that drifted.
+      const base = slot.get(BASE_LOCALE)
+      /* v8 ignore next -- the absent check above already proved every locale is present. */
+      if (base === undefined) continue
+      for (const locale of SHIPPED_LOCALES) {
+        if (locale === BASE_LOCALE) continue
+        const other = slot.get(locale)
+        /* v8 ignore next -- same guarantee as above. */
+        if (other === undefined) continue
+        const baseOnly = base.keys.filter(k => !other.keys.includes(k))
+        const otherOnly = other.keys.filter(k => !base.keys.includes(k))
+        if (baseOnly.length > 0) problems.push(`${base.file} ${base.name} has keys absent from ${other.name}: ${baseOnly.join(', ')}`)
+        if (otherOnly.length > 0) problems.push(`${other.file} ${other.name} has keys absent from ${base.name}: ${otherOnly.join(', ')}`)
+      }
     }
 
     // The shipped dictionary count only grows; a collapse means discovery or
-    // pairing broke, which would hide real asymmetry.
-    expect(comparedPairs).toBeGreaterThan(25)
+    // grouping broke, which would hide real asymmetry.
+    expect(comparedGroups).toBeGreaterThan(25)
     expect(problems).toEqual([])
   })
 })

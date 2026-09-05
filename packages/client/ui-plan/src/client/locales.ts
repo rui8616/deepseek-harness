@@ -22,3 +22,13 @@ export const en = {
   'chip.off.title': 'Plan mode off — click to turn on (/plan)',
   'chip.exitFailed': 'Failed to exit plan mode',
 } satisfies Record<PlanKey, string>
+
+/** Japanese dictionary, checked complete against the zh key set. */
+export const ja = {
+  'chip.label': 'Plan',
+  'chip.on.aria': 'プランモードはオンです。押すとオフになります',
+  'chip.on.title': 'プランモード オン — クリックでオフ（/plan off）',
+  'chip.off.aria': 'プランモードはオフです。押すとオンになります',
+  'chip.off.title': 'プランモード オフ — クリックでオン（/plan）',
+  'chip.exitFailed': 'プランモードの終了に失敗しました',
+} satisfies Record<PlanKey, string>

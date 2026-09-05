@@ -579,11 +579,11 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'LanguageRegistration',
-    declaration: 'export interface LanguageRegistration {\n    id: LocaleId;\n    label: string;\n    fallback: LocaleId;\n}',
+    declaration: 'export interface LanguageRegistration {\n    id: LocaleId;\n    label: string;\n    fallback: LocaleId;\n    documentLang?: string;\n}',
   },
   {
     name: 'LocaleDefinition',
-    declaration: 'export interface LocaleDefinition {\n    readonly id: LocaleId;\n    readonly label: string;\n    readonly fallback?: LocaleId;\n}',
+    declaration: 'export interface LocaleDefinition {\n    readonly id: LocaleId;\n    readonly label: string;\n    readonly fallback?: LocaleId;\n    readonly documentLang?: string;\n}',
   },
   {
     name: 'LocaleDict',

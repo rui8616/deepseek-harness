@@ -34,3 +34,19 @@ export const en = {
   'connection.reconnect': 'Disconnected, reconnect now',
   'connection.restart': 'Connecting, restart now',
 } satisfies Record<SettingsKey, string>
+
+/** Japanese dictionary, checked complete against the zh key set. */
+export const ja = {
+  'trigger': '設定',
+  'title': '設定',
+  'close': '閉じる',
+  'openDocument': '設定ファイルを開く',
+  'openDocument.error': '設定ファイルを開けませんでした',
+  'general.nav': '一般',
+  'connection.error': '接続エラー',
+  'connection.retry': '今すぐ再接続',
+  'connection.connecting': '接続中',
+  'connection.connected': '接続しました',
+  'connection.reconnect': '接続エラー、クリックして今すぐ再接続',
+  'connection.restart': '接続中、クリックして今すぐ再接続',
+} satisfies Record<SettingsKey, string>

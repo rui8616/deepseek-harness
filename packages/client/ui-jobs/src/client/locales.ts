@@ -43,3 +43,22 @@ export const en: Record<JobKey, string> = {
 
 /** Key domain of the `job` namespace (zh is the source of truth). */
 export type JobKey = keyof typeof zh
+
+/** Japanese dictionary (same key set). */
+export const ja: Record<JobKey, string> = {
+  'count.live.one': '{count} 件のバックグラウンドジョブを実行中',
+  'count.live.other': '{count} 件のバックグラウンドジョブを実行中',
+  'count.idle.one': '{count} 件のバックグラウンドジョブ',
+  'count.idle.other': '{count} 件のバックグラウンドジョブ',
+  'list.aria': 'バックグラウンドジョブ',
+  'status.running': '実行中',
+  'status.stopping': '停止中',
+  'status.completed': '完了',
+  'status.killed': 'キャンセル済み',
+  'status.failed': '失敗',
+  'duration.seconds': '{seconds}秒',
+  'duration.minutes': '{minutes}分{seconds}秒',
+  'duration.hours': '{hours}時間{minutes}分',
+  'duration.title.live': '{duration} 実行中',
+  'duration.title.done': '所要時間 {duration}',
+}
