@@ -39,7 +39,7 @@ For a permanent profile, place `github-ready-review-rule.mjs` beside `$DSH_HOME/
 
 ## Expose the dedicated endpoint
 
-The main Web UI and `/api` remain on port 3080. The overlay mounts a second WebServer in an isolated realm; only `POST /github` is registered there, and every other path returns `404`.
+The main Web UI and `/api` remain on port 4500. The overlay mounts a second WebServer in an isolated realm; only `POST /github` is registered there, and every other path returns `404`.
 
 A Caddy configuration can expose only that listener:
 

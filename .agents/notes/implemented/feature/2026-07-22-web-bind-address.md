@@ -28,4 +28,4 @@ The HTTP carrier also hides the bind address inside `startWebServer()`, so alter
 
 ## Consequences
 
-Local `dsh web` starts remain reachable at `http://127.0.0.1:3080`. The CLI exposes no custom interface, all-interface, or IPv6 mode; custom WebServer compositions retain the carrier's two-address choice and own every consequence. Server tests pin both carrier values into Node listen, while CLI tests pin rejection of the all-interface flag.
+Local `dsh web` starts remain reachable at `http://127.0.0.1:4500`. The CLI exposes no custom interface, all-interface, or IPv6 mode; custom WebServer compositions retain the carrier's two-address choice and own every consequence. Server tests pin both carrier values into Node listen, while CLI tests pin rejection of the all-interface flag.

@@ -189,36 +189,36 @@ describe('connection node half', () => {
     }
 
     const forged = fakeResponse()
-    await routes[0]!.handler(fakeRequest({ host: 'localhost:3080' }), forged.response)
+    await routes[0]!.handler(fakeRequest({ host: 'localhost:4500' }), forged.response)
     expect(forged.state).toMatchObject({ status: 401, body: 'unauthorized' })
     await dispose()
   })
 
   it('passes loopback and declared-authority requests through to the bridge', async () => {
-    const { routes, connection, dispose } = await mounted({ trustedHosts: ['harness.example:3080', '192.168.1.5'] })
+    const { routes, connection, dispose } = await mounted({ trustedHosts: ['harness.example:4500', '192.168.1.5'] })
     // Loopback, no browser markers (curl shape): the fence passes; the carrier
     // answers 404 for a GET unary path — proof the bridge ran.
     const loopback = fakeResponse()
     await routes[0]!.handler(fakeRequest({
-      host: '127.0.0.1:3080',
-      cookie: browserCookie(connection, '127.0.0.1:3080'),
+      host: '127.0.0.1:4500',
+      cookie: browserCookie(connection, '127.0.0.1:4500'),
     }), loopback.response)
     expect(loopback.state.status).toBe(404)
     // An all-interfaces composition derives port-less LAN IP literals, which
     // pass markerless curl on any port.
     const lan = fakeResponse()
     await routes[0]!.handler(fakeRequest({
-      host: '192.168.1.5:3080',
-      cookie: browserCookie(connection, '192.168.1.5:3080'),
+      host: '192.168.1.5:4500',
+      cookie: browserCookie(connection, '192.168.1.5:4500'),
     }), lan.response)
     expect(lan.state.status).toBe(404)
     // Declared public authority, same-origin browser shape.
     const declared = fakeResponse()
     await routes[0]!.handler(fakeRequest({
-      host: 'harness.example:3080',
-      origin: 'http://harness.example:3080',
+      host: 'harness.example:4500',
+      origin: 'http://harness.example:4500',
       'sec-fetch-site': 'same-origin',
-      cookie: browserCookie(connection, 'harness.example:3080'),
+      cookie: browserCookie(connection, 'harness.example:4500'),
     }), declared.response)
     expect(declared.state.status).toBe(404)
     await dispose()
@@ -226,7 +226,7 @@ describe('connection node half', () => {
 
   it('shares its configured trust and authentication policy with sibling routes', async () => {
     const { connection, dispose } = await mounted({ trustedHosts: ['harness.example'] })
-    const loopback = fakeRequest({ host: '127.0.0.1:3080' })
+    const loopback = fakeRequest({ host: '127.0.0.1:4500' })
     const declared = fakeRequest({ host: 'harness.example' })
 
     expect(connection.requestRejection(loopback)).toBe(401)
@@ -265,8 +265,8 @@ describe('connection node half', () => {
     }
     const result = fakeResponse()
     await route!.handler(fakePost({
-      host: '127.0.0.1:3080',
-      cookie: browserCookie(connection, '127.0.0.1:3080'),
+      host: '127.0.0.1:4500',
+      cookie: browserCookie(connection, '127.0.0.1:4500'),
     }, '/rpc/goals/create', request), result.response)
     expect(result.state.status).toBe(200)
     expect(JSON.parse(String(result.state.body))).toEqual({
@@ -323,9 +323,9 @@ describe('connection node half', () => {
     }
 
     const claimed = fakeResponse()
-    const loopbackCookie = browserCookie(connection, '127.0.0.1:3080')
+    const loopbackCookie = browserCookie(connection, '127.0.0.1:4500')
     await route.handler(fakePost({
-      host: '127.0.0.1:3080', cookie: loopbackCookie,
+      host: '127.0.0.1:4500', cookie: loopbackCookie,
     }, '/api/goals/create', request), claimed.response)
     expect(JSON.parse(String(claimed.state.body))).toEqual({
       type: 'server-response',
@@ -344,14 +344,14 @@ describe('connection node half', () => {
 
     const unclaimed = fakeResponse()
     await route.handler(fakeRequest({
-      host: '127.0.0.1:3080', cookie: loopbackCookie,
+      host: '127.0.0.1:4500', cookie: loopbackCookie,
     }, '/api/session.list'), unclaimed.response)
     expect(unclaimed.state.status).toBe(404)
 
     await remove()
     const withdrawn = fakeResponse()
     await route.handler(fakePost({
-      host: '127.0.0.1:3080', cookie: loopbackCookie,
+      host: '127.0.0.1:4500', cookie: loopbackCookie,
     }, '/api/goals/create', request), withdrawn.response)
     expect(withdrawn.state.status).toBe(404)
     expect(calls).toHaveLength(1)

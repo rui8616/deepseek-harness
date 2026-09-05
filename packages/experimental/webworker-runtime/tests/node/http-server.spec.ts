@@ -53,13 +53,13 @@ describe('binding', () => {
   it('reports the bind through the callback the webserver fiber waits on', async () => {
     const server = createServer(listener)
     let bound = false
-    expect(server.listen(3080, () => { bound = true })).toBe(server)
+    expect(server.listen(4500, () => { bound = true })).toBe(server)
     await Promise.resolve()
     expect(bound).toBe(true)
   })
 
   it('reports the loopback authority the tunnel synthesizes requests against', () => {
-    expect(createServer(listener).address()).toEqual({ address: '127.0.0.1', family: 'IPv4', port: 3080 })
+    expect(createServer(listener).address()).toEqual({ address: '127.0.0.1', family: 'IPv4', port: 4500 })
   })
 
   it('completes close without a socket to release', async () => {

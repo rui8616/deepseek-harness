@@ -59,7 +59,7 @@ function createAuth(
   return BrowserAuth.create(processOwner, credentials(store), maxAgeDays)
 }
 
-function request(url: string, authority = '127.0.0.1:3080', init?: {
+function request(url: string, authority = '127.0.0.1:4500', init?: {
   cookie?: string
   method?: string
 }): ConnectionIndexRequest {
@@ -75,7 +75,7 @@ function request(url: string, authority = '127.0.0.1:3080', init?: {
 
 function exchange(
   auth: BrowserAuth,
-  authority = '127.0.0.1:3080',
+  authority = '127.0.0.1:4500',
 ): { cookie: string; launchUrl: string; state: ResponseState } {
   const launchUrl = auth.authenticatedUrl(`http://${authority}`)
   const target = new URL(launchUrl)
@@ -107,27 +107,27 @@ describe('BrowserAuth', () => {
     })
     expect(login.state.headers?.['set-cookie']).toMatch(/; Max-Age=2592000; Path=\/; Expires=.*; HttpOnly; SameSite=Strict$/u)
     expect(login.state.headers?.['set-cookie']).not.toContain('Secure')
-    expect(first.isAuthenticated(request('/', '127.0.0.1:3080', { cookie: login.cookie }))).toBe(true)
+    expect(first.isAuthenticated(request('/', '127.0.0.1:4500', { cookie: login.cookie }))).toBe(true)
     expect(first.isAuthenticated({
-      headers: new Headers({ host: '127.0.0.1:3080', cookie: login.cookie }),
+      headers: new Headers({ host: '127.0.0.1:4500', cookie: login.cookie }),
     })).toBe(true)
     expect(first.isAuthenticated({ headers: new Headers() })).toBe(false)
-    expect(first.isAuthenticated(request('/', 'localhost:3080', { cookie: login.cookie }))).toBe(false)
+    expect(first.isAuthenticated(request('/', 'localhost:4500', { cookie: login.cookie }))).toBe(false)
     expect(first.isAuthenticated(request('/', '127.0.0.1:3081', { cookie: login.cookie }))).toBe(false)
 
     const reloaded = await createAuth(store, 30, processOwner)
-    expect(reloaded.authenticatedUrl('http://127.0.0.1:3080')).toBe(login.launchUrl)
-    expect(reloaded.isAuthenticated(request('/', '127.0.0.1:3080', { cookie: login.cookie }))).toBe(true)
+    expect(reloaded.authenticatedUrl('http://127.0.0.1:4500')).toBe(login.launchUrl)
+    expect(reloaded.isAuthenticated(request('/', '127.0.0.1:4500', { cookie: login.cookie }))).toBe(true)
 
     const restarted = await createAuth(store)
-    expect(new URL(restarted.authenticatedUrl('http://127.0.0.1:3080')).searchParams.get('token'))
+    expect(new URL(restarted.authenticatedUrl('http://127.0.0.1:4500')).searchParams.get('token'))
       .not.toBe(new URL(login.launchUrl).searchParams.get('token'))
-    expect(restarted.isAuthenticated(request('/', '127.0.0.1:3080', { cookie: login.cookie }))).toBe(true)
+    expect(restarted.isAuthenticated(request('/', '127.0.0.1:4500', { cookie: login.cookie }))).toBe(true)
     const staleUrl = new URL(login.launchUrl)
     const redirected = response()
     expect(restarted.authorizeIndex(request(
       `${staleUrl.pathname}${staleUrl.search}`,
-      '127.0.0.1:3080',
+      '127.0.0.1:4500',
       { cookie: login.cookie },
     ), redirected.value)).toBe(false)
     expect(redirected.state).toEqual({
@@ -144,7 +144,7 @@ describe('BrowserAuth', () => {
     const auth = await createAuth(new RecordCredentials())
     const { cookie } = exchange(auth)
     const allowed = response()
-    expect(auth.authorizeIndex(request('/index.html', '127.0.0.1:3080', { cookie }), allowed.value)).toBe(true)
+    expect(auth.authorizeIndex(request('/index.html', '127.0.0.1:4500', { cookie }), allowed.value)).toBe(true)
     expect(allowed.state).toEqual({})
 
     for (const candidate of [
@@ -152,7 +152,7 @@ describe('BrowserAuth', () => {
       request('/?token=wrong'),
       request('/?token=wrong&token=again'),
       request('/index.html?token=wrong'),
-      request(auth.authenticatedUrl('http://127.0.0.1:3080'), '127.0.0.1:3080', { method: 'HEAD' }),
+      request(auth.authenticatedUrl('http://127.0.0.1:4500'), '127.0.0.1:4500', { method: 'HEAD' }),
     ]) {
       const denied = response()
       expect(auth.authorizeIndex(candidate, denied.value)).toBe(false)
@@ -175,36 +175,36 @@ describe('BrowserAuth', () => {
     const { cookie } = exchange(auth)
     const [name, value] = cookie.split('=') as [string, string]
 
-    expect(auth.isAuthenticated(request('/', '127.0.0.1:3080', { cookie: `${name}=broken` }))).toBe(false)
-    expect(auth.isAuthenticated(request('/', '127.0.0.1:3080', { cookie: `${name}=${value.slice(0, -1)}x` }))).toBe(false)
-    expect(auth.isAuthenticated(request('/', '127.0.0.1:3080', { cookie: `${name}=%` }))).toBe(false)
-    expect(auth.isAuthenticated(request('/', '127.0.0.1:3080', {
+    expect(auth.isAuthenticated(request('/', '127.0.0.1:4500', { cookie: `${name}=broken` }))).toBe(false)
+    expect(auth.isAuthenticated(request('/', '127.0.0.1:4500', { cookie: `${name}=${value.slice(0, -1)}x` }))).toBe(false)
+    expect(auth.isAuthenticated(request('/', '127.0.0.1:4500', { cookie: `${name}=%` }))).toBe(false)
+    expect(auth.isAuthenticated(request('/', '127.0.0.1:4500', {
       cookie: signedBodyCookie(store, name, 'a'),
     }))).toBe(false)
     expect(auth.isAuthenticated({ headers: {} })).toBe(false)
     expect(auth.isAuthenticated({ headers: { host: 'bad host', cookie } })).toBe(false)
-    expect(auth.isAuthenticated({ headers: { host: '127.0.0.1:3080' } })).toBe(false)
+    expect(auth.isAuthenticated({ headers: { host: '127.0.0.1:4500' } })).toBe(false)
 
     const invalidPayloads: unknown[] = [
       'not json',
       null,
-      { version: 2, authority: '127.0.0.1:3080', issuedAt: Date.now(), expiresAt: Date.now() + 1000 },
+      { version: 2, authority: '127.0.0.1:4500', issuedAt: Date.now(), expiresAt: Date.now() + 1000 },
       { version: 1, authority: 42, issuedAt: Date.now(), expiresAt: Date.now() + 1000 },
-      { version: 1, authority: '127.0.0.1:3080', issuedAt: 'now', expiresAt: Date.now() + 1000 },
-      { version: 1, authority: '127.0.0.1:3080', issuedAt: Date.now(), expiresAt: 'later' },
+      { version: 1, authority: '127.0.0.1:4500', issuedAt: 'now', expiresAt: Date.now() + 1000 },
+      { version: 1, authority: '127.0.0.1:4500', issuedAt: Date.now(), expiresAt: 'later' },
     ]
     for (const payload of invalidPayloads) {
-      expect(auth.isAuthenticated(request('/', '127.0.0.1:3080', {
+      expect(auth.isAuthenticated(request('/', '127.0.0.1:4500', {
         cookie: signedCookie(store, name, payload),
       }))).toBe(false)
     }
 
     const shorter = await createAuth(store, 1)
-    expect(shorter.isAuthenticated(request('/', '127.0.0.1:3080', { cookie }))).toBe(false)
+    expect(shorter.isAuthenticated(request('/', '127.0.0.1:4500', { cookie }))).toBe(false)
     vi.setSystemTime(new Date('2026-09-24T00:00:00.000Z'))
-    expect(auth.isAuthenticated(request('/', '127.0.0.1:3080', { cookie }))).toBe(false)
+    expect(auth.isAuthenticated(request('/', '127.0.0.1:4500', { cookie }))).toBe(false)
     vi.setSystemTime(new Date('2026-08-23T00:00:00.000Z'))
-    expect(auth.isAuthenticated(request('/', '127.0.0.1:3080', { cookie }))).toBe(false)
+    expect(auth.isAuthenticated(request('/', '127.0.0.1:4500', { cookie }))).toBe(false)
   })
 
   it('loads one secret per activation and replaces it after deletion on the next activation', async () => {
@@ -214,16 +214,16 @@ describe('BrowserAuth', () => {
     expect(store).toMatchObject({ reads: 0, modifies: 1 })
 
     await store.deleteRecord()
-    expect(auth.isAuthenticated(request('/', '127.0.0.1:3080', { cookie: first.cookie }))).toBe(true)
+    expect(auth.isAuthenticated(request('/', '127.0.0.1:4500', { cookie: first.cookie }))).toBe(true)
     const sameActivation = exchange(auth)
-    expect(auth.isAuthenticated(request('/', '127.0.0.1:3080', { cookie: sameActivation.cookie }))).toBe(true)
+    expect(auth.isAuthenticated(request('/', '127.0.0.1:4500', { cookie: sameActivation.cookie }))).toBe(true)
     expect(store).toMatchObject({ reads: 0, modifies: 1 })
 
     const reactivated = await createAuth(store)
     const second = exchange(reactivated)
     expect(second.cookie).not.toBe(first.cookie)
-    expect(reactivated.isAuthenticated(request('/', '127.0.0.1:3080', { cookie: first.cookie }))).toBe(false)
-    expect(reactivated.isAuthenticated(request('/', '127.0.0.1:3080', { cookie: second.cookie }))).toBe(true)
+    expect(reactivated.isAuthenticated(request('/', '127.0.0.1:4500', { cookie: first.cookie }))).toBe(false)
+    expect(reactivated.isAuthenticated(request('/', '127.0.0.1:4500', { cookie: second.cookie }))).toBe(true)
     expect(store).toMatchObject({ reads: 0, modifies: 2 })
   })
 

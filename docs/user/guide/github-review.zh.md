@@ -39,7 +39,7 @@ dsh web --patch /absolute/path/to/github-review/cordis.yml
 
 ## 暴露专用端点
 
-主 Web UI 与 `/api` 继续位于端口 3080。overlay 会在隔离 realm 中挂载第二个 WebServer；其中只注册 `POST /github`，其他路径均返回 `404`。
+主 Web UI 与 `/api` 继续位于端口 4500。overlay 会在隔离 realm 中挂载第二个 WebServer；其中只注册 `POST /github`，其他路径均返回 `404`。
 
 Caddy 配置可以只暴露该监听器：
 

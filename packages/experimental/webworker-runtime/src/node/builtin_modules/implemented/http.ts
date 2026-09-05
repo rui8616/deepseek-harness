@@ -14,7 +14,7 @@ type Listener = (...args: unknown[]) => void
 export type { RequestListener }
 
 /** Port reported by `address()`; it becomes `webServer.port`. */
-const VIRTUAL_PORT = 3080
+const VIRTUAL_PORT = 4500
 
 let captured: RequestListener | undefined
 const waiting = new Set<(listener: RequestListener) => void>()

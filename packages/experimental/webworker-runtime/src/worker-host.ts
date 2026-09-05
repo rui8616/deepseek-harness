@@ -40,7 +40,7 @@ import {
 export { DEFAULT_ROOT } from './image-layout.ts'
 
 /** Port reported to the tree when the caller names none; the bind is fake either way. */
-export const DEFAULT_PORT = 3080
+export const DEFAULT_PORT = 4500
 
 // Every literal `require`/`resolve` of an image package below must appear in
 // the packer's IMAGE_ENTRY_SEEDS: no image file references these requests, so
