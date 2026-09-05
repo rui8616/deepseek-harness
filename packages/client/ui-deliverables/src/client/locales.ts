@@ -23,3 +23,12 @@ export const en: Record<DeliverablesKey, string> = {
 
 /** Union of this namespace's dictionary keys. */
 export type DeliverablesKey = keyof typeof zh
+
+/** Japanese dictionary (same key set). */
+export const ja: Record<DeliverablesKey, string> = {
+  'produced.label': '成果物',
+  'produced.moreOne': '他 1 件',
+  'produced.more': '他 {count} 件',
+  'produced.open': '{name} を開く',
+  'produced.showInFolder': 'フォルダーに表示',
+}

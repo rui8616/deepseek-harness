@@ -77,9 +77,12 @@ describe('document language', () => {
     const { locale } = await bench()
     expect(langOf()).toBe('zh-CN')
     locale.setLocale('en')
-    // `en` needs no region; `zh` names its script variant, which bare `zh`
-    // leaves ambiguous for pronunciation and font selection.
+    // A definition's own `documentLang` supplies the tag; only zh declares one,
+    // because bare `zh` leaves the script variant ambiguous for pronunciation
+    // and font selection. `en` and `ja` are unambiguous as their own ids.
     expect(langOf()).toBe('en')
+    locale.setLocale('ja')
+    expect(langOf()).toBe('ja')
     locale.setLocale('zh')
     expect(langOf()).toBe('zh-CN')
   })
@@ -96,5 +99,14 @@ describe('document language', () => {
     locale.addLanguage({ id: 'pt-BR', label: 'Português', fallback: 'en' })
     locale.setLocale('pt-BR')
     expect(langOf()).toBe('pt-BR')
+  })
+
+  it('prefers a definition\'s own documentLang over its id', async () => {
+    // The id is what the preference stores; `documentLang` is what the markup
+    // must say when the two differ, which is why zh ships `zh-CN`.
+    const { locale } = await bench()
+    locale.addLanguage({ id: 'ko', label: '한국어', fallback: 'en', documentLang: 'ko-KR' })
+    locale.setLocale('ko')
+    expect(langOf()).toBe('ko-KR')
   })
 })

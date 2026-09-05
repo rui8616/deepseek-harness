@@ -48,3 +48,17 @@ export const en = {
   'time.months': '{n}mo',
   'time.years': '{n}y',
 } satisfies Record<ReferenceKey, string>
+
+/** Japanese dictionary, checked complete against the zh key set. */
+export const ja = {
+  'section.files': 'ファイルとフォルダー',
+  'section.sessions': 'セッション',
+  'candidate.noCwd': '（作業ディレクトリなし）',
+  'crumb.root': 'ワークスペース',
+  'time.now': '今',
+  'time.minutes': '{n}分',
+  'time.hours': '{n}時間',
+  'time.days': '{n}日',
+  'time.months': '{n}か月',
+  'time.years': '{n}年',
+} satisfies Record<ReferenceKey, string>

@@ -49,3 +49,25 @@ export const en: Record<ScheduleCatalogKey, string> = {
 
 /** Key domain of the Schedule catalog namespace. */
 export type ScheduleCatalogKey = keyof typeof zh
+
+/** Japanese dictionary (same key set). */
+export const ja: Record<ScheduleCatalogKey, string> = {
+  'trigger.one': '{count} 件のリマインダー',
+  'trigger.other': '{count} 件のリマインダー',
+  'list.aria': '有効なリマインダー',
+  'status.scheduled': '待機中',
+  'status.overdue': '期限超過',
+  'frequency.once': '1 回のみ',
+  'frequency.every': '{value}{unit}ごと',
+  'unit.day.one': '日',
+  'unit.day.other': '日',
+  'unit.hour.one': '時間',
+  'unit.hour.other': '時間',
+  'unit.minute.one': '分',
+  'unit.minute.other': '分',
+  'unit.second.one': '秒',
+  'unit.second.other': '秒',
+  'relative.now': '今が期限',
+  'relative.future': '{value}{unit}後',
+  'relative.overdue': '{value}{unit}超過',
+}
