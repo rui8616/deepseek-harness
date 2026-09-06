@@ -71,7 +71,6 @@ it('boots the built plugin graph and renders a fixture session end to end', asyn
     // the local-build label, while the build stamp stays.
     expect(document.querySelectorAll('svg[viewBox="0 0 382.53 216.07"] path[fill^="url(#kasyun-mark-"]').length).toBeGreaterThanOrEqual(2)
     expect(document.querySelector('svg[viewBox="0 0 23.16 17.04"]')).toBeNull()
-    expect(document.head.querySelector('link[rel="icon"]')?.getAttribute('href')?.startsWith('data:image/svg+xml,')).toBe(true)
     expect(screen.queryByText('DSH Local Build')).toBeNull()
     screen.getByText('KASYUN')
     screen.getByText('HARNESS')

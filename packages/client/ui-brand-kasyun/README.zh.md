@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-本包向品牌槽位——`sidebar.brand.mark`、`sidebar.brand.name`，以及空白会话首屏的 `conversation.hero.brand.mark`——填充嘉迅软件的标志与名称。除了以 `official` profile 构建的客户端 bundle 之外，它在所有构建中注册这些填充，恰好是 [`dsh-client-ui-brand-official`](../ui-brand-official/README.zh.md) 的补集：两个包共享一份 bundle 名单，却永远不会占据同一个格子，因此 `official` 构建显示官方品牌，其余构建显示嘉迅的品牌。标志是公司网站上的轮廓，以网站的蓝到绿渐变填充；名称旁边是 `HARNESS` 徽章，下方是外壳的构建戳（版本、提交、dirty 标记），本地构建不会丢失回退原本携带的任何信息。首屏标志是同一轮廓按首屏尺寸绘制，不带回退鱼的悬停动画。在插件存活期间，浏览器标签页图标也是这个标志——补成正方形后覆盖外壳的 `link[rel="icon"]`。它不保留任何运行时状态，也不向模型请求贡献任何内容。
+本包向品牌槽位——`sidebar.brand.mark`、`sidebar.brand.name`，以及空白会话首屏的 `conversation.hero.brand.mark`——填充嘉迅软件的标志与名称。除了以 `official` profile 构建的客户端 bundle 之外，它在所有构建中注册这些填充，恰好是 [`dsh-client-ui-brand-official`](../ui-brand-official/README.zh.md) 的补集：两个包共享一份 bundle 名单，却永远不会占据同一个格子，因此 `official` 构建显示官方品牌，其余构建显示嘉迅的品牌。标志是公司网站上的轮廓，以网站的蓝到绿渐变填充；名称旁边是 `HARNESS` 徽章，下方是外壳的构建戳（版本、提交、dirty 标记），本地构建不会丢失回退原本携带的任何信息。首屏标志是同一轮廓按首屏尺寸绘制，不带回退鱼的悬停动画。浏览器标签页在本包之外完成品牌化：外壳的 `apps/web/public/favicon.svg` 与 web manifest 以静态资产携带标志与名称，`kasyun` 客户端构建 profile 固定标签页文字。它不保留任何运行时状态，也不向模型请求贡献任何内容。
 
 ## 目录
 
@@ -33,7 +33,7 @@ kind: "package-reference"
 
 ### 命名浏览器标签页
 
-标签页文字不是槽位：外壳在构建时读取 `DSH_CLIENT_TITLE`（index 页面与 document 标题都用它），缺省时回退到本地构建标签。默认构建会把构建进程里的每个 `DSH_CLIENT_*` 值原样透传，因此 `DSH_CLIENT_TITLE=KASYUN pnpm run build` 即可命名标签页；该值记录在 `.dsh-build/client-build-environment.json` 中，直到下一次构建为止。标签页图标不需要构建步骤——本插件在运行时安装它。
+标签页文字不是槽位：外壳在构建时读取 `DSH_CLIENT_TITLE`（index 页面与 document 标题都用它），缺省时回退到本地构建标签。仓库的 `kasyun` 客户端构建 profile（`scripts/client-build-environment.ts`）把 `DSH_CLIENT_TITLE=KASYUN` 与 `DSH_CLIENT_BUILD_PROFILE=kasyun` 固定在一起，根 `build` 脚本默认选用它，因此每次 `pnpm run build` 都会命名标签页，无需环境变量。标签页图标是外壳的静态 `favicon.svg`，直接携带标志。
 
 ### 选择 profile
 
@@ -47,7 +47,7 @@ kind: "package-reference"
 <details>
 <summary>实现细节——点击展开</summary>
 
-两个侧栏填充作为一组声明感知的注册安装：嵌套的 `ctx.slots.inject()` 调用等待侧栏声明，因此无论本行在声明者之前还是之后激活，这组注册都能工作；声明消失时两个填充一并撤回，HMR 期间也不会留下残缺的品牌混合。首屏填充是独立的一组 `ctx.slots.inject()`，因为声明那个槽位的是会话条目而非侧栏。标签页图标是同一构建门控下的一个普通 `ctx.effect`：它把外壳现有的 `link[rel="icon"]`（没有则追加一个）指向补成正方形的标志的 `data:` svg，并在释放时还原或移除，因此插件离开后外壳的图标会回来。标志的渐变定义在它自己的 svg 内，id 由 `useId` 派生，因为展开的品牌行、折叠的 rail 与首屏会同时挂载这个标志，固定 id 会冲突。名称填充以 `brand` locale 命名空间注册，其字典由插件在同一个 apply 中通过 `ctx.locale` 注册；构建戳读取每个客户端 bundle 都携带的 `DSH_CLIENT_*` define。浏览器半部是 [`src/client/index.ts`](src/client/index.ts)；node 半部是一个空 Loader 座位。
+两个侧栏填充作为一组声明感知的注册安装：嵌套的 `ctx.slots.inject()` 调用等待侧栏声明，因此无论本行在声明者之前还是之后激活，这组注册都能工作；声明消失时两个填充一并撤回，HMR 期间也不会留下残缺的品牌混合。首屏填充是独立的一组 `ctx.slots.inject()`，因为声明那个槽位的是会话条目而非侧栏。标志的渐变定义在它自己的 svg 内，id 由 `useId` 派生，因为展开的品牌行、折叠的 rail 与首屏会同时挂载这个标志，固定 id 会冲突。名称填充以 `brand` locale 命名空间注册，其字典由插件在同一个 apply 中通过 `ctx.locale` 注册；构建戳读取每个客户端 bundle 都携带的 `DSH_CLIENT_*` define。浏览器半部是 [`src/client/index.ts`](src/client/index.ts)；node 半部是一个空 Loader 座位。
 
 </details>
 
@@ -83,8 +83,7 @@ kind: "package-reference"
 
 - **品牌内容是源码而非配置**——更换标志或名称意味着编辑本包并重建其 bundle；没有任何 cordis.yml 字段或设置卡片可以选择它们。
 - **渐变是固定的**——标志在两种主题下都保持网站的颜色，不跟随主题的标签或品牌 token。
-- **浏览器标题是构建值**——`DSH_CLIENT_TITLE` 在构建时选择标签页文字，而非通过 UI 槽位或 locale 字典；不带它的构建显示外壳的本地构建标签。
-- **web manifest 保留外壳的图标与名称**——`apps/web/public/manifest.webmanifest` 是静态宿主资产，运行时的图标替换触及不到，因此已安装的 PWA 仍显示外壳的身份。
+- **浏览器标签页不受 profile 门控**——favicon 与 web manifest 是静态宿主资产，因此本仓库的 `official` 构建也会带上嘉迅图标与 manifest 名称；标签页文字则跟随所选 profile。
 
 <a id="dev-note"></a>
 ### 开发备注
