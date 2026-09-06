@@ -2,5 +2,5 @@
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/client/ui-brand-kasyun/README.md
-README.md: eb5a87888cd390fb64ee2d8094558994060d31cc
-README.zh.md: 0786551a5d411e5f8ea5c7c7eec0491f4e9167cc
+README.md: bf764671f0a273fb4501767f155b742c1cdef166
+README.zh.md: cf0a401bcd97d021cf31963c3bf3c14679a0d27f

@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-This package fills the brand slots — `sidebar.brand.mark`, `sidebar.brand.name`, and the blank-session hero's `conversation.hero.brand.mark` — with the Kasyun Soft mark and name. It registers these occupants in every client bundle except one built with the `official` profile, the exact complement of [`dsh-client-ui-brand-official`](../ui-brand-official/README.md): the two packages share a bundle roster without ever occupying the same cell, so an `official` build shows the official brand and every other build shows Kasyun's. The mark is the silhouette from the company site, filled with the site's blue-to-green gradient; the name sits beside a `HARNESS` badge and over the shell's build stamp (version, commit, dirty marker), so a local build loses no information the fallback carried. The hero mark is the same silhouette at the hero's size, without the fallback fish's hover animation. It retains no runtime state and contributes nothing to model requests.
+This package fills the brand slots — `sidebar.brand.mark`, `sidebar.brand.name`, and the blank-session hero's `conversation.hero.brand.mark` — with the Kasyun Soft mark and name. It registers these occupants in every client bundle except one built with the `official` profile, the exact complement of [`dsh-client-ui-brand-official`](../ui-brand-official/README.md): the two packages share a bundle roster without ever occupying the same cell, so an `official` build shows the official brand and every other build shows Kasyun's. The mark is the silhouette from the company site, filled with the site's blue-to-green gradient; the name sits beside a `HARNESS` badge and over the shell's build stamp (version, commit, dirty marker), so a local build loses no information the fallback carried. The hero mark is the same silhouette at the hero's size, without the fallback fish's hover animation. For the plugin's lifetime the browser-tab icon is the mark too, padded to a square over the shell's `link[rel="icon"]`. It retains no runtime state and contributes nothing to model requests.
 
 ## Table of Contents
 
@@ -31,6 +31,10 @@ Mount this plugin in the browser roster of the web-app bundle (the shipped roste
 
 The mark's geometry and gradient live in [`src/client/mark.ts`](src/client/mark.ts): the path is `https://www.kasyunsoft.com/assets/mark.svg` translated to the origin, the gradient its nine stops. [`src/client/Brand.tsx`](src/client/Brand.tsx) draws them at the width the host surface requests. The name is the `brand.name` key in [`src/client/locales.ts`](src/client/locales.ts) and the badge beside it is `brand.tag`, one entry each per shipped locale (zh, en, ja); `verify-client-ui-i18n` rejects product copy written directly into the component. Rebuild the bundle (`pnpm --filter @deepseek-ai/dsh-client-ui-brand-kasyun bundle`) before probing a live `dsh web` server.
 
+### Naming the browser tab
+
+The tab's text is not a slot: the shell reads `DSH_CLIENT_TITLE` at build time (the index page and the document title both use it) and falls back to the local-build label. A default build passes every `DSH_CLIENT_*` value through from the build process, so `DSH_CLIENT_TITLE=KASYUN pnpm run build` names the tab; the value is recorded in `.dsh-build/client-build-environment.json` and lasts until the next build. The tab's icon needs no build step — this plugin installs it at runtime.
+
 ### Choosing the profile
 
 `DSH_CLIENT_BUILD_PROFILE` selects which brand renders. An `official` build leaves both slots to the official package; any other value (including unset) registers this package's occupants. The plugin loads and validates in both cases; only the registration is profile-gated.
@@ -43,7 +47,7 @@ The mark's geometry and gradient live in [`src/client/mark.ts`](src/client/mark.
 <details>
 <summary>Implementation internals — click to expand</summary>
 
-The two sidebar occupants install as one declaration-aware registration set: nested `ctx.slots.inject()` calls wait on the sidebar declaration, so the set works whether this row activates before or after the declarer, withdraws both occupants when the declaration collapses, and leaves no partial brand mix during HMR. The hero occupant is its own `ctx.slots.inject()` set because the conversation entry, not the sidebar, declares that slot. The mark's gradient is defined inside its own svg under a `useId`-derived id, because the expanded brand row, the collapsed rail, and the hero can mount the mark at the same time and a fixed id would collide. The name occupant registers with the `brand` locale namespace, whose dictionaries the plugin registers through `ctx.locale` in the same apply; the build stamp reads the `DSH_CLIENT_*` defines every client bundle carries. The browser half is [`src/client/index.ts`](src/client/index.ts); the node half is an empty Loader seat.
+The two sidebar occupants install as one declaration-aware registration set: nested `ctx.slots.inject()` calls wait on the sidebar declaration, so the set works whether this row activates before or after the declarer, withdraws both occupants when the declaration collapses, and leaves no partial brand mix during HMR. The hero occupant is its own `ctx.slots.inject()` set because the conversation entry, not the sidebar, declares that slot. The tab icon is a plain `ctx.effect` under the same build gate: it retargets the shell's existing `link[rel="icon"]` (or appends one) at a `data:` svg of the square-padded mark and restores or removes it on dispose, so the shell's icon returns when the plugin leaves. The mark's gradient is defined inside its own svg under a `useId`-derived id, because the expanded brand row, the collapsed rail, and the hero can mount the mark at the same time and a fixed id would collide. The name occupant registers with the `brand` locale namespace, whose dictionaries the plugin registers through `ctx.locale` in the same apply; the build stamp reads the `DSH_CLIENT_*` defines every client bundle carries. The browser half is [`src/client/index.ts`](src/client/index.ts); the node half is an empty Loader seat.
 
 </details>
 
@@ -79,7 +83,8 @@ These limits define how brand presentation is supplied. They are current package
 
 - **Brand content is source, not configuration** — changing the mark or name means editing this package and rebuilding its bundle; no cordis.yml field or settings card selects them.
 - **The gradient is fixed** — the mark keeps the site's colors in both themes rather than following the theme's label or brand tokens.
-- **The browser title is independent** — `DSH_CLIENT_TITLE` selects title text at build time rather than through a UI slot.
+- **The browser title is a build value** — `DSH_CLIENT_TITLE` selects the tab text at build time rather than through a UI slot or a locale dictionary; a build without it shows the shell's local-build label.
+- **The web manifest keeps the shell's icon and name** — `apps/web/public/manifest.webmanifest` is a static host asset the runtime icon swap does not reach, so an installed PWA still shows the shell's identity.
 
 <a id="dev-note"></a>
 ### Dev Note

@@ -9,6 +9,7 @@ import type {} from '@deepseek-ai/dsh-client-ui-sidebar/client'
 // Type-only: pulls the conversation hero's slot declaration.
 import type {} from '@deepseek-ai/dsh-client-ui-conversation/client'
 import { KasyunBrandMark, KasyunBrandName, KasyunHeroMark } from './Brand.tsx'
+import { installKasyunFavicon } from './favicon.ts'
 import { en, ja, zh, type BrandKey } from './locales.ts'
 
 export type { BrandKey } from './locales.ts'
@@ -31,12 +32,14 @@ export const inject = ['slots', 'locale']
  * from the other side: an `official` bundle leaves every slot to the official
  * package, every other build gets the Kasyun brand. The two sidebar slots
  * install as one declaration-aware set; the conversation hero's mark is a
- * separate set because a different entry declares it.
+ * separate set because a different entry declares it. The browser-tab icon
+ * is a document effect under the same gate, outside the slot system.
  * @param ctx - Client root context.
  */
 export function apply(ctx: ClientContext): void {
   if (process.env.DSH_CLIENT_BUILD_PROFILE === 'official') return
   ctx.effect(() => ctx.locale.register(NS, { zh, en, ja }), 'ui-brand-kasyun: dictionaries')
+  ctx.effect(installKasyunFavicon, 'ui-brand-kasyun: favicon')
   ctx.slots.inject('sidebar.brand.mark', () =>
     ctx.slots.inject('sidebar.brand.name', function* () {
       yield ctx.slots.register({ name: 'sidebar.brand.mark' }, KasyunBrandMark)

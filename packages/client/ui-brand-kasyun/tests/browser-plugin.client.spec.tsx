@@ -9,12 +9,24 @@ import { apply, inject } from '../src/client/index.ts'
 import { buildStamp, KasyunBrandMark, KasyunBrandName, KasyunHeroMark, type KasyunBrandNameProps } from '../src/client/Brand.tsx'
 import { en, ja, zh } from '../src/client/locales.ts'
 import { KASYUN_MARK_GRADIENT, KASYUN_MARK_VIEWBOX } from '../src/client/mark.ts'
+import { installKasyunFavicon, kasyunFaviconUrl } from '../src/client/favicon.ts'
 import { apply as hostApply } from '../src/index.ts'
 
 afterEach(() => {
   cleanup()
   vi.unstubAllEnvs()
+  for (const link of document.head.querySelectorAll('link[rel="icon"]')) link.remove()
 })
+
+/** The shell's own icon link, as index.html ships it. */
+function shellIconLink(): HTMLLinkElement {
+  const link = document.createElement('link')
+  link.rel = 'icon'
+  link.type = 'image/svg+xml'
+  link.href = 'http://localhost/favicon.svg'
+  document.head.append(link)
+  return link
+}
 
 const HERO_HOLE = 'conversation.hero.brand.mark'
 
@@ -57,11 +69,37 @@ describe('Kasyun browser-brand plugin', () => {
     expect(inject).toEqual(['slots', 'locale'])
   })
 
-  it('leaves every slot empty in the official build profile', async () => {
+  it('leaves every slot and the shell icon alone in the official build profile', async () => {
     vi.stubEnv('DSH_CLIENT_BUILD_PROFILE', 'official')
+    const icon = shellIconLink()
     const subject = await bench()
     await subject.ctx.plugin({ inject: [...inject], apply }).await()
     for (const hole of HOLES) expect(subject.slots.entries(hole)).toHaveLength(0)
+    expect(icon.href).toBe('http://localhost/favicon.svg')
+  })
+
+  it('retargets the shell icon for the plugin lifetime and restores it on dispose', async () => {
+    vi.stubEnv('DSH_CLIENT_BUILD_PROFILE', 'local')
+    const icon = shellIconLink()
+    const subject = await bench()
+    const fiber = subject.ctx.plugin({ inject: [...inject], apply })
+    await fiber.await()
+    expect(icon.href).toBe(kasyunFaviconUrl())
+    expect(icon.href.startsWith('data:image/svg+xml,')).toBe(true)
+    expect(decodeURIComponent(icon.href)).toContain(`viewBox="0 -83.23 ${KASYUN_MARK_VIEWBOX.width} ${KASYUN_MARK_VIEWBOX.width}"`)
+    expect(document.head.querySelectorAll('link[rel="icon"]')).toHaveLength(1)
+
+    await fiber.dispose()
+    expect(icon.href).toBe('http://localhost/favicon.svg')
+    expect(icon.type).toBe('image/svg+xml')
+  })
+
+  it('adds and removes its own icon link when the shell ships none', () => {
+    const dispose = installKasyunFavicon()
+    const link = document.head.querySelector<HTMLLinkElement>('link[rel="icon"]')
+    expect(link?.href).toBe(kasyunFaviconUrl())
+    dispose()
+    expect(document.head.querySelector('link[rel="icon"]')).toBeNull()
   })
 
   it('fills declarations before or after apply and removes every occupant on teardown', async () => {
