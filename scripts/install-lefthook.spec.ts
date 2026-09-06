@@ -297,6 +297,17 @@ describe('worktree-local Lefthook installer', { timeout: 90_000 }, () => {
     expect(readFileSync(legacyHook, 'utf8')).toBe('#!/bin/sh\n# legacy hook\n')
   })
 
+  it('ignores a stray file beside the registered worktrees', async () => {
+    const fixture = createFixture()
+    // Finder writes .DS_Store into any directory it lists, .git/worktrees included.
+    write(join(commonDirectory(fixture), 'worktrees/.DS_Store'), 'finder-metadata\n')
+
+    const mainInstall = await runInstaller(fixture, fixture.main)
+
+    expect(mainInstall.status, mainInstall.stderr).toBe(0)
+    expect(git(fixture, fixture.main, ['config', '--worktree', '--get', 'core.hooksPath'])).toBe(hooksPath(fixture, fixture.main))
+  })
+
   it('replaces the owned hook path Git copies into a newly added worktree', async () => {
     const fixture = createFixture()
     const mainInstall = await runInstaller(fixture, fixture.main)
