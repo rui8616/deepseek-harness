@@ -5,6 +5,7 @@ import { cleanup, render } from '@testing-library/react'
 import { SlotRegistry } from '@deepseek-ai/dsh-client-ui-renderer/client'
 import { LocaleRuntime } from '@deepseek-ai/dsh-client-locale/client'
 import type { PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
+import { FISH_LOGO_VIEWBOX } from '@deepseek-ai/dsh-client-ui-primitives'
 import { apply, inject } from '../src/client/index.ts'
 import { buildStamp, CustomBrandMark, CustomBrandName, type CustomBrandNameProps } from '../src/client/Brand.tsx'
 import { en, ja, zh } from '../src/client/locales.ts'
@@ -100,20 +101,25 @@ describe('custom browser-brand plugin', () => {
     expect(t('brand.name')).toBe(ja['brand.name'])
   })
 
-  it('renders the mark at every requested size', () => {
+  it('renders the official whale geometry in brand blue at every requested width', () => {
     const mark = render(<CustomBrandMark {...markProps(34)} />)
-    expect(mark.container.querySelector('svg')?.getAttribute('width')).toBe('34')
+    const svg = mark.container.querySelector('svg')
+    expect(svg?.getAttribute('viewBox')).toBe(`0 0 ${FISH_LOGO_VIEWBOX.width} ${FISH_LOGO_VIEWBOX.height}`)
+    expect(svg?.getAttribute('width')).toBe('34')
+    expect(Number(svg?.getAttribute('height'))).toBeCloseTo((34 * FISH_LOGO_VIEWBOX.height) / FISH_LOGO_VIEWBOX.width)
+    expect(svg?.querySelector('path')?.getAttribute('fill')).toMatch(/^var\(--dsw-alias-brand-primary/)
     mark.rerender(<CustomBrandMark {...markProps(24)} />)
     expect(mark.container.querySelector('svg')?.getAttribute('width')).toBe('24')
   })
 
-  it('renders the name with the build stamp the bundle carries', () => {
+  it('renders the name, its tag badge, and the build stamp the bundle carries', () => {
     vi.stubEnv('DSH_CLIENT_VERSION', '1.2.3')
     vi.stubEnv('DSH_CLIENT_COMMIT_HASH', 'abc1234')
     vi.stubEnv('DSH_CLIENT_GIT_DIRTY', 'true')
     const t = (key: string) => `[${key}]`
     const name = render(<CustomBrandName {...nameProps(t)} />)
     expect(name.getByText('[brand.name]')).toBeTruthy()
+    expect(name.getByText('[brand.tag]')).toBeTruthy()
     expect(name.getByText('1.2.3-abc1234-dirty')).toBeTruthy()
   })
 
@@ -122,7 +128,7 @@ describe('custom browser-brand plugin', () => {
     expect(buildStamp()).toBeUndefined()
     const t = (key: string) => key
     const name = render(<CustomBrandName {...nameProps(t)} />)
-    expect(name.container.querySelectorAll('span')).toHaveLength(2)
+    expect(name.container.textContent).toBe('brand.namebrand.tag')
 
     vi.stubEnv('DSH_CLIENT_VERSION', '1.2.3')
     vi.stubEnv('DSH_CLIENT_COMMIT_HASH', undefined)

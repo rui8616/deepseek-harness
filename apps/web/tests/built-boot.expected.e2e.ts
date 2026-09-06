@@ -66,10 +66,12 @@ it('boots the built plugin graph and renders a fixture session end to end', asyn
     expect(screen.queryByText('DSH Local Build')).toBeNull()
   } else {
     // Every non-official build composes dsh-client-ui-brand-custom over both
-    // sidebar brand slots: its spark mark and name replace the shell's fish
-    // and local-build label, while the build stamp stays.
-    expect(document.querySelector('svg[viewBox="0 0 32 32"]')).not.toBeNull()
+    // sidebar brand slots: the whale silhouette in brand blue and the tagged
+    // name replace the shell's ink fish and local-build label, while the
+    // build stamp stays.
+    expect(document.querySelector('svg[viewBox="0 0 23.16 17.04"] path[fill^="var(--dsw-alias-brand-primary"]')).not.toBeNull()
     expect(screen.queryByText('DSH Local Build')).toBeNull()
+    screen.getByText('HARNESS')
     const version = clientBuildValue('DSH_CLIENT_VERSION')
     if (version === undefined) throw new Error('default client build record must carry DSH_CLIENT_VERSION')
     const commit = clientBuildValue('DSH_CLIENT_COMMIT_HASH')

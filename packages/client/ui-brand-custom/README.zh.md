@@ -29,7 +29,7 @@ kind: "package-reference"
 
 ### 换成你的品牌
 
-标志是 [`src/client/Brand.tsx`](src/client/Brand.tsx) 中的 `CustomBrandMark` svg；它接收宿主界面要求的 `size`，并用 `currentColor` 与反色标签 token 绘制，因此会跟随主题。名称是 [`src/client/locales.ts`](src/client/locales.ts) 中的 `brand.name` 键，每个发布语言（zh、en、ja）各一条；`verify-client-ui-i18n` 会拒绝直接写进组件的产品文案。在探测运行中的 `dsh web` 服务器之前先重建 bundle（`pnpm --filter @deepseek-ai/dsh-client-ui-brand-custom bundle`）。
+标志是 [`src/client/Brand.tsx`](src/client/Brand.tsx) 中的 `CustomBrandMark` svg；它按宿主界面要求的宽度绘制官方鲸鱼轮廓（来自 `dsh-client-ui-primitives` 的 `FISH_LOGO_PATH`），并以主题的 DeepSeek 品牌蓝别名填充，因此亮暗模式都会跟随。换成自己的标志时替换路径或填充即可——[`BRAND_GUIDELINES.zh.md`](../../../BRAND_GUIDELINES.zh.md) 要求非 DeepSeek 自身的部署不要把官方标志呈现为官方背书。名称是 [`src/client/locales.ts`](src/client/locales.ts) 中的 `brand.name` 键，旁边的徽章是 `brand.tag`（默认 `HARNESS`，仿官方字标的徽章），每个发布语言（zh、en、ja）各一条；`verify-client-ui-i18n` 会拒绝直接写进组件的产品文案。在探测运行中的 `dsh web` 服务器之前先重建 bundle（`pnpm --filter @deepseek-ai/dsh-client-ui-brand-custom bundle`）。
 
 ### 选择 profile
 

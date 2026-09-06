@@ -12,9 +12,9 @@ The sidebar brand row is composed through two `single` slots, `sidebar.brand.mar
 
 `packages/client/ui-brand-custom` (`@deepseek-ai/dsh-client-ui-brand-custom`) occupies both sidebar brand slots and is mounted in the web-app bundle beside the official package. Its registration is gated as the exact complement of the official package's gate: `apply` returns early when `DSH_CLIENT_BUILD_PROFILE === 'official'`, so the two rows never register into the same cell and no priority arbitration is needed. The occupants install as one declaration-aware set (nested `ctx.slots.inject`, generator-yielded registrations) so they arrive whether the sidebar declares before or after this row and leave together on dispose.
 
-The mark is an inline svg (`viewBox="0 0 32 32"`, rounded square plus spark) drawn with `currentColor` and `--dsw-alias-label-primary-inverted`. The name registers with a `brand` locale namespace (`brand.name` in zh, en, ja) and renders the same build stamp the shell fallback showed — version, commit, `dirty` — from the `DSH_CLIENT_*` defines the client tsdown preset bakes into every bundle, so a local build keeps its commit stamp in the sidebar. Placeholder brand values ship (`DSH Custom` and its zh/ja counterparts); a deployment edits `Brand.tsx` and `locales.ts`.
+The mark reuses the official whale geometry (`FISH_LOGO_PATH` and `FISH_LOGO_VIEWBOX`, which `dsh-client-ui-primitives` exports for composed marks) filled with the theme's DeepSeek brand-blue alias (`--dsw-alias-brand-primary-new-colorprimary-new-color`), so the sidebar shows DeepSeek's blue whale where the shell fallback shows the same silhouette in ink. The name registers with a `brand` locale namespace: `brand.name` beside a `brand.tag` badge (`HARNESS`, styled after the badge baked into the official wordmark svg — that badge is artwork inside `BrandWordmark`, not a component, which is why no non-official build showed it before), over the same build stamp the shell fallback showed — version, commit, `dirty` — from the `DSH_CLIENT_*` defines the client tsdown preset bakes into every bundle. Placeholder name values ship (`DSH Custom` and its zh/ja counterparts); a deployment edits `Brand.tsx` and `locales.ts`.
 
-`apps/web/tests/built-boot.expected.e2e.ts` is the real-composition test: its non-official branch now asserts the custom mark and name and the absence of the local-build label; its official branch is unchanged.
+`apps/web/tests/built-boot.expected.e2e.ts` is the real-composition test: its non-official branch now asserts the brand-blue whale, the `HARNESS` badge, and the absence of the local-build label; its official branch is unchanged.
 
 ## Alternatives considered
 
@@ -25,6 +25,8 @@ The mark is an inline svg (`viewBox="0 0 32 32"`, rounded square plus spark) dra
 **Edit the shell fallback in `SidebarRoot.tsx`, or drop the official package's build gate.** Both put the brand into host source rather than a composable occupant, contradicting the slots reference's extension rules and the official package's stated replacement route.
 
 **Name only, no build stamp.** Simpler, but a local build would lose the commit stamp the fallback carried, which is the one piece of information a test deployment needs from that row.
+
+**A bespoke geometric mark.** The first cut shipped a rounded square with a spark. Replaced because the request was a mark on DeepSeek's own standard, which the exported whale geometry plus the brand-blue token satisfies without new artwork; `BRAND_GUIDELINES.md` is a trademark-usage document, not a visual specification, and the package README points a non-DeepSeek deployment at swapping the silhouette.
 
 ## Consequences
 

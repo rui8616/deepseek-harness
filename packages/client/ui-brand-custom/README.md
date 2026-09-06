@@ -29,7 +29,7 @@ Mount this plugin in the browser roster of the web-app bundle (the shipped roste
 
 ### Making the brand yours
 
-The mark is the `CustomBrandMark` svg in [`src/client/Brand.tsx`](src/client/Brand.tsx); it receives the `size` the host surface requests and draws with `currentColor` and the inverted label token so it follows the theme. The name is the `brand.name` key in [`src/client/locales.ts`](src/client/locales.ts), one entry per shipped locale (zh, en, ja); `verify-client-ui-i18n` rejects product copy written directly into the component. Rebuild the bundle (`pnpm --filter @deepseek-ai/dsh-client-ui-brand-custom bundle`) before probing a live `dsh web` server.
+The mark is the `CustomBrandMark` svg in [`src/client/Brand.tsx`](src/client/Brand.tsx); it draws the official whale silhouette (`FISH_LOGO_PATH` from `dsh-client-ui-primitives`) at the width the host surface requests, filled with the theme's DeepSeek brand-blue alias so it follows light and dark. Swap the path or the fill for a mark of your own — [`BRAND_GUIDELINES.md`](../../../BRAND_GUIDELINES.md) asks a deployment that is not DeepSeek's not to present the official mark as an endorsement. The name is the `brand.name` key in [`src/client/locales.ts`](src/client/locales.ts) and the badge beside it is `brand.tag` (`HARNESS` by default, after the official wordmark's badge), one entry each per shipped locale (zh, en, ja); `verify-client-ui-i18n` rejects product copy written directly into the component. Rebuild the bundle (`pnpm --filter @deepseek-ai/dsh-client-ui-brand-custom bundle`) before probing a live `dsh web` server.
 
 ### Choosing the profile
 
