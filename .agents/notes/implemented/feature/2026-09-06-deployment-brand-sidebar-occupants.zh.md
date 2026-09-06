@@ -10,11 +10,11 @@ Status: implemented
 
 ## Decision
 
-`packages/client/ui-brand-kasyun`（`@deepseek-ai/dsh-client-ui-brand-kasyun`）以嘉迅软件的品牌占据两个侧栏品牌槽位，并在 web-app bundle 中挂载于官方包旁边。它的注册门控恰好是官方包门控的补集：当 `DSH_CLIENT_BUILD_PROFILE === 'official'` 时 `apply` 直接返回，因此两行永远不会注册进同一个格子，也不需要优先级仲裁。两个填充作为一组声明感知的集合安装（嵌套 `ctx.slots.inject`、生成器 yield 出的注册），无论侧栏在本行之前还是之后声明都能到位，并在释放时一并离开。
+`packages/client/ui-brand-kasyun`（`@deepseek-ai/dsh-client-ui-brand-kasyun`）以嘉迅软件的品牌占据两个侧栏品牌槽位和空白会话首屏的 `conversation.hero.brand.mark`，并在 web-app bundle 中挂载于官方包旁边。它的注册门控恰好是官方包门控的补集：当 `DSH_CLIENT_BUILD_PROFILE === 'official'` 时 `apply` 直接返回，因此两行永远不会注册进同一个格子，也不需要优先级仲裁。侧栏填充作为一组声明感知的集合安装（嵌套 `ctx.slots.inject`、生成器 yield 出的注册），无论侧栏在本行之前还是之后声明都能到位，并在释放时一并离开；首屏填充是独立的一组 `ctx.slots.inject`，因为声明那个槽位的是会话条目。官方包把首屏留给动画鱼回退是因为那个回退本身就是官方标志；本包没有这层理由，因此首屏按其要求的尺寸静态显示嘉迅标志。
 
 标志是 `https://www.kasyunsoft.com/assets/mark.svg` 里的轮廓——一条 evenodd 路径、五个直边子路径——平移到包围盒起于原点（`KASYUN_MARK_PATH`，viewBox `382.53 × 216.07`），以网站的九色标蓝到绿渐变填充；渐变定义在标志自己的 svg 内，id 由 `useId` 派生，因为展开行与折叠 rail 会同时挂载这个标志。名称以 `brand` locale 命名空间注册：`brand.name`（`KASYUN` / `嘉迅` / `嘉迅`）旁边是 `brand.tag` 徽章（`HARNESS`，仿官方字标 svg 里画死的那块徽章——它是 `BrandWordmark` 内部的图形而非组件，这正是此前任何非官方构建都看不到它的原因），下方是与外壳回退相同的构建戳——版本、提交、`dirty`——数据来自客户端 tsdown 预设烘焙进每个 bundle 的 `DSH_CLIENT_*` define。
 
-`apps/web/tests/built-boot.expected.e2e.ts` 是真实组合测试：其非官方分支现在断言嘉迅标志、`KASYUN` 名称、`HARNESS` 徽章出现、本地构建标签缺席；官方分支保持不变。
+`apps/web/tests/built-boot.expected.e2e.ts` 是真实组合测试：其非官方分支现在断言至少两个嘉迅标志（侧栏与首屏）出现、所有鱼形 svg 缺席、`KASYUN` 名称与 `HARNESS` 徽章出现、本地构建标签缺席；官方分支保持不变。
 
 ## Alternatives considered
 

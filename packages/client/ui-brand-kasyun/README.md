@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-This package fills the sidebar brand slots — `sidebar.brand.mark` and `sidebar.brand.name` — with the Kasyun Soft mark and name. It registers these occupants in every client bundle except one built with the `official` profile, the exact complement of [`dsh-client-ui-brand-official`](../ui-brand-official/README.md): the two packages share a bundle roster without ever occupying the same cell, so an `official` build shows the official brand and every other build shows Kasyun's. The mark is the silhouette from the company site, filled with the site's blue-to-green gradient; the name sits beside a `HARNESS` badge and over the shell's build stamp (version, commit, dirty marker), so a local build loses no information the fallback carried. The conversation hero slot (`conversation.hero.brand.mark`) stays unoccupied: its declaring package renders the animated hero fish as the fallback. It retains no runtime state and contributes nothing to model requests.
+This package fills the brand slots — `sidebar.brand.mark`, `sidebar.brand.name`, and the blank-session hero's `conversation.hero.brand.mark` — with the Kasyun Soft mark and name. It registers these occupants in every client bundle except one built with the `official` profile, the exact complement of [`dsh-client-ui-brand-official`](../ui-brand-official/README.md): the two packages share a bundle roster without ever occupying the same cell, so an `official` build shows the official brand and every other build shows Kasyun's. The mark is the silhouette from the company site, filled with the site's blue-to-green gradient; the name sits beside a `HARNESS` badge and over the shell's build stamp (version, commit, dirty marker), so a local build loses no information the fallback carried. The hero mark is the same silhouette at the hero's size, without the fallback fish's hover animation. It retains no runtime state and contributes nothing to model requests.
 
 ## Table of Contents
 
@@ -43,7 +43,7 @@ The mark's geometry and gradient live in [`src/client/mark.ts`](src/client/mark.
 <details>
 <summary>Implementation internals — click to expand</summary>
 
-The two occupants install as one declaration-aware registration set: nested `ctx.slots.inject()` calls wait on the sidebar declaration, so the set works whether this row activates before or after the declarer, withdraws both occupants when the declaration collapses, and leaves no partial brand mix during HMR. The mark's gradient is defined inside its own svg under a `useId`-derived id, because the expanded brand row and the collapsed rail mount the mark at the same time and a fixed id would collide. The name occupant registers with the `brand` locale namespace, whose dictionaries the plugin registers through `ctx.locale` in the same apply; the build stamp reads the `DSH_CLIENT_*` defines every client bundle carries. The browser half is [`src/client/index.ts`](src/client/index.ts); the node half is an empty Loader seat.
+The two sidebar occupants install as one declaration-aware registration set: nested `ctx.slots.inject()` calls wait on the sidebar declaration, so the set works whether this row activates before or after the declarer, withdraws both occupants when the declaration collapses, and leaves no partial brand mix during HMR. The hero occupant is its own `ctx.slots.inject()` set because the conversation entry, not the sidebar, declares that slot. The mark's gradient is defined inside its own svg under a `useId`-derived id, because the expanded brand row, the collapsed rail, and the hero can mount the mark at the same time and a fixed id would collide. The name occupant registers with the `brand` locale namespace, whose dictionaries the plugin registers through `ctx.locale` in the same apply; the build stamp reads the `DSH_CLIENT_*` defines every client bundle carries. The browser half is [`src/client/index.ts`](src/client/index.ts); the node half is an empty Loader seat.
 
 </details>
 
@@ -56,6 +56,7 @@ Read these pages when the brand surface is not enough. They move from the slots 
 
 - [ui-brand-official](../ui-brand-official/README.md) — the complementary occupant set for `official` builds.
 - [ui-sidebar](../ui-sidebar/README.md) — declares `sidebar.brand.mark` and `sidebar.brand.name` and renders their fallbacks.
+- [ui-conversation](../ui-conversation/README.md) — declares `conversation.hero.brand.mark` in the blank-session hero.
 - [Web Client Slots](../../../docs/subsystems/slots.md) — the composition rules this package follows.
 
 -----
@@ -90,4 +91,4 @@ None.
 
 </details>
 
-**Runtime invariant:** No companion is published. The package retains no mutable state, and its two slot occupants install and leave through one transactional effect.
+**Runtime invariant:** No companion is published. The package retains no mutable state, and its slot occupants install and leave through their declaration-aware effects.

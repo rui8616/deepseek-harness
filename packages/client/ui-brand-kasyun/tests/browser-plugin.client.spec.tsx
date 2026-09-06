@@ -6,7 +6,7 @@ import { SlotRegistry } from '@deepseek-ai/dsh-client-ui-renderer/client'
 import { LocaleRuntime } from '@deepseek-ai/dsh-client-locale/client'
 import type { PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
 import { apply, inject } from '../src/client/index.ts'
-import { buildStamp, KasyunBrandMark, KasyunBrandName, type KasyunBrandNameProps } from '../src/client/Brand.tsx'
+import { buildStamp, KasyunBrandMark, KasyunBrandName, KasyunHeroMark, type KasyunBrandNameProps } from '../src/client/Brand.tsx'
 import { en, ja, zh } from '../src/client/locales.ts'
 import { KASYUN_MARK_GRADIENT, KASYUN_MARK_VIEWBOX } from '../src/client/mark.ts'
 import { apply as hostApply } from '../src/index.ts'
@@ -16,12 +16,13 @@ afterEach(() => {
   vi.unstubAllEnvs()
 })
 
+const HERO_HOLE = 'conversation.hero.brand.mark'
+
 const HOLES = [
   'sidebar.brand.mark',
   'sidebar.brand.name',
+  HERO_HOLE,
 ] as const
-
-const HERO_HOLE = 'conversation.hero.brand.mark'
 
 /** The name occupant reads only its translate seat; the standard hooks stay unexercised here. */
 function nameProps(t: (key: string) => string): KasyunBrandNameProps {
@@ -41,7 +42,7 @@ async function bench(declare = true) {
   const slots = ctx.get('slots') as SlotRegistry
   const declareHoles = () => slots.register({
     name: 'root',
-    children: Object.fromEntries([...HOLES, HERO_HOLE].map(name => [name, { kind: 'single', scope: 'root' }])),
+    children: Object.fromEntries(HOLES.map(name => [name, { kind: 'single', scope: 'root' }])),
   } as never, () => null)
   const disposeHoles = declare ? declareHoles() : undefined
   return { ctx, slots, locale, declareHoles, disposeHoles }
@@ -87,11 +88,10 @@ describe('Kasyun browser-brand plugin', () => {
     for (const hole of HOLES) expect(after.slots.entries(hole)).toHaveLength(1)
   })
 
-  it('registers the brand dictionaries for the shipped locales and leaves the hero alone', async () => {
+  it('registers the brand dictionaries for the shipped locales', async () => {
     vi.stubEnv('DSH_CLIENT_BUILD_PROFILE', 'local')
     const subject = await bench()
     await subject.ctx.plugin({ inject: [...inject], apply }).await()
-    expect(subject.slots.entries(HERO_HOLE)).toHaveLength(0)
     const t = subject.locale.bind('brand')
     subject.locale.setLocale('zh')
     expect(t('brand.name')).toBe(zh['brand.name'])
@@ -114,6 +114,13 @@ describe('Kasyun browser-brand plugin', () => {
     expect(path?.getAttribute('fill-rule')).toBe('evenodd')
     mark.rerender(<KasyunBrandMark {...markProps(24)} />)
     expect(mark.container.querySelector('svg')?.getAttribute('width')).toBe('24')
+  })
+
+  it('keeps the hero host class on the hero mark', () => {
+    const hero = render(<KasyunHeroMark {...({ size: 34, className: 'hero-fish' } as unknown as PropsRuntime<'conversation.hero.brand.mark'>)} />)
+    const svg = hero.container.querySelector('svg')
+    expect(svg?.getAttribute('class')).toBe('hero-fish')
+    expect(svg?.getAttribute('width')).toBe('34')
   })
 
   it('gives each mounted mark its own gradient id', () => {

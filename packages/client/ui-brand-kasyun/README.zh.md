@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-本包向侧栏品牌槽位——`sidebar.brand.mark` 与 `sidebar.brand.name`——填充嘉迅软件的标志与名称。除了以 `official` profile 构建的客户端 bundle 之外，它在所有构建中注册这些填充，恰好是 [`dsh-client-ui-brand-official`](../ui-brand-official/README.zh.md) 的补集：两个包共享一份 bundle 名单，却永远不会占据同一个格子，因此 `official` 构建显示官方品牌，其余构建显示嘉迅的品牌。标志是公司网站上的轮廓，以网站的蓝到绿渐变填充；名称旁边是 `HARNESS` 徽章，下方是外壳的构建戳（版本、提交、dirty 标记），本地构建不会丢失回退原本携带的任何信息。会话首屏槽位（`conversation.hero.brand.mark`）保持无填充：其声明包以动画首屏鱼作为回退渲染。它不保留任何运行时状态，也不向模型请求贡献任何内容。
+本包向品牌槽位——`sidebar.brand.mark`、`sidebar.brand.name`，以及空白会话首屏的 `conversation.hero.brand.mark`——填充嘉迅软件的标志与名称。除了以 `official` profile 构建的客户端 bundle 之外，它在所有构建中注册这些填充，恰好是 [`dsh-client-ui-brand-official`](../ui-brand-official/README.zh.md) 的补集：两个包共享一份 bundle 名单，却永远不会占据同一个格子，因此 `official` 构建显示官方品牌，其余构建显示嘉迅的品牌。标志是公司网站上的轮廓，以网站的蓝到绿渐变填充；名称旁边是 `HARNESS` 徽章，下方是外壳的构建戳（版本、提交、dirty 标记），本地构建不会丢失回退原本携带的任何信息。首屏标志是同一轮廓按首屏尺寸绘制，不带回退鱼的悬停动画。它不保留任何运行时状态，也不向模型请求贡献任何内容。
 
 ## 目录
 
@@ -43,7 +43,7 @@ kind: "package-reference"
 <details>
 <summary>实现细节——点击展开</summary>
 
-两个填充作为一组声明感知的注册安装：嵌套的 `ctx.slots.inject()` 调用等待侧栏声明，因此无论本行在声明者之前还是之后激活，这组注册都能工作；声明消失时两个填充一并撤回，HMR 期间也不会留下残缺的品牌混合。标志的渐变定义在它自己的 svg 内，id 由 `useId` 派生，因为展开的品牌行与折叠的 rail 会同时挂载这个标志，固定 id 会冲突。名称填充以 `brand` locale 命名空间注册，其字典由插件在同一个 apply 中通过 `ctx.locale` 注册；构建戳读取每个客户端 bundle 都携带的 `DSH_CLIENT_*` define。浏览器半部是 [`src/client/index.ts`](src/client/index.ts)；node 半部是一个空 Loader 座位。
+两个侧栏填充作为一组声明感知的注册安装：嵌套的 `ctx.slots.inject()` 调用等待侧栏声明，因此无论本行在声明者之前还是之后激活，这组注册都能工作；声明消失时两个填充一并撤回，HMR 期间也不会留下残缺的品牌混合。首屏填充是独立的一组 `ctx.slots.inject()`，因为声明那个槽位的是会话条目而非侧栏。标志的渐变定义在它自己的 svg 内，id 由 `useId` 派生，因为展开的品牌行、折叠的 rail 与首屏会同时挂载这个标志，固定 id 会冲突。名称填充以 `brand` locale 命名空间注册，其字典由插件在同一个 apply 中通过 `ctx.locale` 注册；构建戳读取每个客户端 bundle 都携带的 `DSH_CLIENT_*` define。浏览器半部是 [`src/client/index.ts`](src/client/index.ts)；node 半部是一个空 Loader 座位。
 
 </details>
 
@@ -56,6 +56,7 @@ kind: "package-reference"
 
 - [ui-brand-official](../ui-brand-official/README.zh.md)——`official` 构建下与本包互补的填充集合。
 - [ui-sidebar](../ui-sidebar/README.zh.md)——声明 `sidebar.brand.mark` 与 `sidebar.brand.name` 并渲染其回退。
+- [ui-conversation](../ui-conversation/README.zh.md)——在空白会话首屏声明 `conversation.hero.brand.mark`。
 - [Web Client Slots](../../../docs/subsystems/slots.zh.md)——本包遵循的组合规则。
 
 -----
@@ -90,4 +91,4 @@ kind: "package-reference"
 
 </details>
 
-**运行时不变式：** 不发布伴生入口。本包不保留可变状态，两个 slot occupant 通过同一个事务性 effect 安装和释放。
+**运行时不变式：** 不发布伴生入口。本包不保留可变状态，各 slot occupant 通过各自的声明感知 effect 安装和释放。
