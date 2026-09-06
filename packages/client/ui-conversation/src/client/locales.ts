@@ -400,7 +400,7 @@ export const ja = {
   'access.confirm.acknowledge': 'リスクを理解した上で続行します',
   'access.confirm.cancel': 'キャンセル',
   'access.confirm.enable': 'フルアクセスを有効にする',
-  'hero.headline': '未踏の領域を探索する',
+  'hero.headline': '未知の領域を探索する',
   'hero.preview': 'プレビュー版',
   'hero.chooseWorkspace': 'ワークスペースを選択',
   'session.hierarchy': 'セッション階層',

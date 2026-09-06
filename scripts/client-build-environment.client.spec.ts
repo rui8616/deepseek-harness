@@ -124,7 +124,24 @@ describe('client build environment', () => {
         DSH_CLIENT_COMMIT_HASH: COMMIT_HASH.slice(0, 7),
       })
     }).toThrow(/DSH_CLIENT_VERSION/)
-    expect(() => { resolveClientBuildEnvironment({}, 'unknown') }).toThrow(/unknown client build profile/)
+    expect(() => { resolveClientBuildEnvironment({}, 'unknown') }).toThrow(/unknown client build profile "unknown"; expected "official" or "kasyun"/)
+    // The deployment profile pins its own values, keeps the repository's dirty marker, and drops inherited extras.
+    expect(resolveClientBuildEnvironment(parent, 'kasyun')).toEqual({
+      DSH_CLIENT_BUILD_PROFILE: 'kasyun',
+      DSH_CLIENT_COMMIT_HASH: COMMIT_HASH.slice(0, 7),
+      DSH_CLIENT_GIT_DIRTY: 'true',
+      DSH_CLIENT_TITLE: 'KASYUN',
+      DSH_CLIENT_VERSION: '1.2.3',
+    })
+    expect(resolveClientBuildEnvironment({ ...parent, DSH_CLIENT_GIT_DIRTY: undefined }, 'kasyun')).toEqual({
+      DSH_CLIENT_BUILD_PROFILE: 'kasyun',
+      DSH_CLIENT_COMMIT_HASH: COMMIT_HASH.slice(0, 7),
+      DSH_CLIENT_TITLE: 'KASYUN',
+      DSH_CLIENT_VERSION: '1.2.3',
+    })
+    expect(() => {
+      resolveClientBuildEnvironment({ DSH_CLIENT_COMMIT_HASH: COMMIT_HASH.slice(0, 7) }, 'kasyun')
+    }).toThrow(/DSH_CLIENT_VERSION is required for the kasyun client build profile/)
     expect(clientBuildProcessEnvironment(parent, {
       DSH_CLIENT_BUILD_PROFILE: 'official',
       DSH_CLIENT_COMMIT_HASH: COMMIT_HASH.slice(0, 7),

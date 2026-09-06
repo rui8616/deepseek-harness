@@ -10,11 +10,11 @@ Status: implemented
 
 ## Decision
 
-`packages/client/ui-brand-custom`（`@deepseek-ai/dsh-client-ui-brand-custom`）占据两个侧栏品牌槽位，并在 web-app bundle 中挂载于官方包旁边。它的注册门控恰好是官方包门控的补集：当 `DSH_CLIENT_BUILD_PROFILE === 'official'` 时 `apply` 直接返回，因此两行永远不会注册进同一个格子，也不需要优先级仲裁。两个填充作为一组声明感知的集合安装（嵌套 `ctx.slots.inject`、生成器 yield 出的注册），无论侧栏在本行之前还是之后声明都能到位，并在释放时一并离开。
+`packages/client/ui-brand-kasyun`（`@deepseek-ai/dsh-client-ui-brand-kasyun`）以嘉迅软件的品牌占据两个侧栏品牌槽位和空白会话首屏的 `conversation.hero.brand.mark`，并在 web-app bundle 中挂载于官方包旁边。它的注册门控恰好是官方包门控的补集：当 `DSH_CLIENT_BUILD_PROFILE === 'official'` 时 `apply` 直接返回，因此两行永远不会注册进同一个格子，也不需要优先级仲裁。侧栏填充作为一组声明感知的集合安装（嵌套 `ctx.slots.inject`、生成器 yield 出的注册），无论侧栏在本行之前还是之后声明都能到位，并在释放时一并离开；首屏填充是独立的一组 `ctx.slots.inject`，因为声明那个槽位的是会话条目。官方包把首屏留给动画鱼回退是因为那个回退本身就是官方标志；本包没有这层理由，因此首屏按其要求的尺寸静态显示嘉迅标志。浏览器标签页在插件之外完成品牌化。图标是外壳的静态 `apps/web/public/favicon.svg`，现在是补成正方形的嘉迅标志，`manifest.webmanifest` 也以嘉迅部署命名，因此 PWA 图标和 JS 执行前的标签页与侧栏一致。文字是外壳已经支持的构建期 `DSH_CLIENT_TITLE`，由 `scripts/client-build-environment.ts` 新增的具名客户端构建 profile `kasyun` 固定（`DSH_CLIENT_BUILD_PROFILE=kasyun`、`DSH_CLIENT_TITLE=KASYUN`、仓库提交与版本、工作树脏时的 dirty 标记），根 `build` 脚本默认选用它；`build:inherited` 保留无 profile 的构建，`build:official` 保留官方构建。
 
-标志是一个内联 svg（`viewBox="0 0 32 32"`，圆角方块加四角星），以 `currentColor` 与 `--dsw-alias-label-primary-inverted` 绘制。名称以 `brand` locale 命名空间注册（`brand.name`，zh、en、ja 各一条），并渲染与外壳回退相同的构建戳——版本、提交、`dirty`——数据来自客户端 tsdown 预设烘焙进每个 bundle 的 `DSH_CLIENT_*` define，因此本地构建在侧栏里保留提交戳。随包发布的是占位品牌值（`DSH Custom` 及其 zh/ja 对应项）；部署方编辑 `Brand.tsx` 与 `locales.ts`。
+标志是 `https://www.kasyunsoft.com/assets/mark.svg` 里的轮廓——一条 evenodd 路径、五个直边子路径——平移到包围盒起于原点（`KASYUN_MARK_PATH`，viewBox `382.53 × 216.07`），以网站的九色标蓝到绿渐变填充；渐变定义在标志自己的 svg 内，id 由 `useId` 派生，因为展开行与折叠 rail 会同时挂载这个标志。名称以 `brand` locale 命名空间注册：`brand.name`（`KASYUN` / `嘉迅` / `嘉迅`）旁边是 `brand.tag` 徽章（`HARNESS`，仿官方字标 svg 里画死的那块徽章——它是 `BrandWordmark` 内部的图形而非组件，这正是此前任何非官方构建都看不到它的原因），下方是与外壳回退相同的构建戳——版本、提交、`dirty`——数据来自客户端 tsdown 预设烘焙进每个 bundle 的 `DSH_CLIENT_*` define。
 
-`apps/web/tests/built-boot.expected.e2e.ts` 是真实组合测试：其非官方分支现在断言自定义标志与名称出现、本地构建标签缺席；官方分支保持不变。
+`apps/web/tests/built-boot.expected.e2e.ts` 是真实组合测试：其非官方分支现在断言至少两个嘉迅标志（侧栏与首屏）出现、所有鱼形 svg 缺席、`KASYUN` 名称与 `HARNESS` 徽章出现、本地构建标签缺席；官方分支保持不变。
 
 ## Alternatives considered
 
@@ -26,6 +26,18 @@ Status: implemented
 
 **只有名称，不带构建戳。** 更简单，但本地构建会丢掉回退原本携带的提交戳，而那正是测试部署从这一行需要的唯一信息。
 
+**DeepSeek 品牌蓝的官方鲸鱼。** 第二版复用了 `FISH_LOGO_PATH` 加主题的品牌蓝别名。替换的原因是 `BRAND_GUIDELINES.md` 要求非 DeepSeek 自身的部署不要把官方标志呈现为官方背书，而这个部署在自己的网站上有自己的标志。
+
+**通用包名（`ui-brand-custom`）加占位值。** 前两版以模板形态发布。改名的原因是本包现在承载的是一个部署的真实标志与名称，模板名会误述它；别的部署应当把自己的包组合进同样的槽位，而不是编辑这一个。
+
+**插件内的运行时 favicon effect。** 中间一版在插件的构建门控下把外壳的 `link[rel="icon"]` 指向 `data:` svg，让 `official` 构建保留外壳图标。改为静态资产的原因是该 effect 触及不到 web manifest 和 JS 执行前的标签页，一个图标两个来源也是维护隐患；本仓库不产出官方产物，门控没有换来任何东西。
+
+**通过 `common` 字典的 `brand.localBuild` 重命名标签页文字。** 支持多语言且无需构建参数，但这个键表示的是外壳的本地构建标签，`ui-sidebar` 的快照固定了它，而且一个 locale 命名空间只有一个所有者，插件无法覆盖。`DSH_CLIENT_TITLE` 是外壳文档化的标题输入。
+
+**把 `DSH_CLIENT_TITLE` 当作每次构建的环境变量。** 对无 profile 的构建有效（它透传继承的 `DSH_CLIENT_*` 值），但只活到下一次遗漏它的构建。具名 profile 把值固定在仓库里并由默认 `build` 脚本选用，任何调用都不必记住它。
+
+**跟随主题的单色而非网站渐变。** `currentColor` 或品牌 token 会与侧栏其他图标一致，但渐变正是这个标志的识别部分；去掉之后轮廓只是一个无名的角形。
+
 ## Consequences
 
-非官方构建显示自定义品牌而非鱼形标志与本地构建标签；e2e 期望随之移动。更换品牌是源码编辑加 bundle 重建，而非配置——已记为已知限制。本包新增一个 `brand` locale 命名空间，并给 web-app 名单及其依赖列表各增加一行。覆盖由本包自己的 `browser-plugin.client.spec.tsx`（两侧门控、先后声明、释放、字典、戳格式）加上发布组合的装配启动 e2e 承担。
+非官方构建显示嘉迅品牌而非鱼形标志与本地构建标签；e2e 期望随之移动。更换品牌是源码编辑加 bundle 重建，而非配置——已记为已知限制，与主题无关的渐变也是。本包新增一个 `brand` locale 命名空间，并给 web-app 名单及其依赖列表各增加一行。覆盖由本包自己的 `browser-plugin.client.spec.tsx`（两侧门控、先后声明、释放、字典、渐变与 id 唯一性、戳格式）加上发布组合的装配启动 e2e 承担。

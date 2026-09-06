@@ -180,6 +180,9 @@ function registeredWorktreeConfigPaths(commonDirectory) {
     const entries = readdirSync(linkedDirectory, { withFileTypes: true })
       .sort((left, right) => left.name.localeCompare(right.name))
     for (const entry of entries) {
+      // Git registers each linked worktree as a directory here; a stray file
+      // (Finder's .DS_Store) is not a worktree and must not become a path.
+      if (!entry.isDirectory()) continue
       paths.push(join(linkedDirectory, entry.name, 'config.worktree'))
     }
   } catch (error) {

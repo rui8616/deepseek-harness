@@ -65,18 +65,21 @@ it('boots the built plugin graph and renders a fixture session end to end', asyn
     expect(document.querySelector('svg[viewBox="26 0 156 24"]')).not.toBeNull()
     expect(screen.queryByText('DSH Local Build')).toBeNull()
   } else {
-    // Every non-official build composes dsh-client-ui-brand-custom over both
-    // sidebar brand slots: its spark mark and name replace the shell's fish
-    // and local-build label, while the build stamp stays.
-    expect(document.querySelector('svg[viewBox="0 0 32 32"]')).not.toBeNull()
+    // Every non-official build composes dsh-client-ui-brand-kasyun over the
+    // sidebar brand slots and the hero mark: the gradient-filled site mark
+    // and the tagged name replace the shell's ink fish, the hero fish, and
+    // the local-build label, while the build stamp stays.
+    expect(document.querySelectorAll('svg[viewBox="0 0 382.53 216.07"] path[fill^="url(#kasyun-mark-"]').length).toBeGreaterThanOrEqual(2)
+    expect(document.querySelector('svg[viewBox="0 0 23.16 17.04"]')).toBeNull()
     expect(screen.queryByText('DSH Local Build')).toBeNull()
+    screen.getByText('KASYUN')
+    screen.getByText('HARNESS')
     const version = clientBuildValue('DSH_CLIENT_VERSION')
     if (version === undefined) throw new Error('default client build record must carry DSH_CLIENT_VERSION')
     const commit = clientBuildValue('DSH_CLIENT_COMMIT_HASH')
     const buildVersion = version
       + (commit === undefined ? '' : `-${commit}`)
       + (clientBuildValue('DSH_CLIENT_GIT_DIRTY') === 'true' ? '-dirty' : '')
-    screen.getByText('DSH Custom')
     screen.getByText(buildVersion)
   }
   // The compact layout dropped group session counts; the fixture workspace

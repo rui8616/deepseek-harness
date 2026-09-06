@@ -12,8 +12,8 @@ it('ships install metadata with the built web application', async () => {
   const manifest: unknown = JSON.parse(await readFile(join(DIST_ROOT, 'manifest.webmanifest'), 'utf8'))
   expect(manifest).toEqual({
     id: '/',
-    name: 'DeepSeek Harness',
-    short_name: 'DSH',
+    name: 'KASYUN SOFT',
+    short_name: 'KASYUN',
     start_url: '/',
     scope: '/',
     display: 'fullscreen',
@@ -26,10 +26,11 @@ it('ships install metadata with the built web application', async () => {
   })
 })
 
-it('ships a favicon that switches to a light mark under dark color scheme', async () => {
+it('ships the Kasyun mark as a gradient favicon that needs no color-scheme swap', async () => {
   const favicon = await readFile(join(DIST_ROOT, 'favicon.svg'), 'utf8')
-  // The light fill must live inside the dark-scheme media query, so the icon
-  // stays black in light mode and only turns white under a dark scheme.
-  expect(favicon).toMatch(/@media \(prefers-color-scheme: dark\)\s*{\s*path\s*{[^}]*fill:\s*#fff/i)
-  expect(favicon).toContain('fill="#000"')
+  // The site gradient reads on light and dark tabs alike, so the icon carries
+  // no scheme-dependent fill; the mark is the same silhouette the sidebar draws.
+  expect(favicon).toContain('<linearGradient id="markGrad"')
+  expect(favicon).toContain('fill="url(#markGrad)" fill-rule="evenodd" d="M1.35,216.07L')
+  expect(favicon).not.toContain('prefers-color-scheme')
 })
