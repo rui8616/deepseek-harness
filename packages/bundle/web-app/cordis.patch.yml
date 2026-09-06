@@ -222,10 +222,10 @@
     - id: ui-brand-official
       name: '@deepseek-ai/dsh-client-ui-brand-official'
 
-    # Deployment occupants for the same sidebar slots; registers only outside
+    # Kasyun Soft occupants for the same sidebar slots; registers only outside
     # the official build profile, the complement of the row above.
-    - id: ui-brand-custom
-      name: '@deepseek-ai/dsh-client-ui-brand-custom'
+    - id: ui-brand-kasyun
+      name: '@deepseek-ai/dsh-client-ui-brand-kasyun'
 
     - id: ui-attachment
       name: '@deepseek-ai/dsh-client-ui-attachment'

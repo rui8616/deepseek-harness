@@ -1504,9 +1504,9 @@ importers:
       '@deepseek-ai/dsh-client-ui-attachment':
         specifier: workspace:^
         version: link:../../client/ui-attachment
-      '@deepseek-ai/dsh-client-ui-brand-custom':
+      '@deepseek-ai/dsh-client-ui-brand-kasyun':
         specifier: workspace:^
-        version: link:../../client/ui-brand-custom
+        version: link:../../client/ui-brand-kasyun
       '@deepseek-ai/dsh-client-ui-brand-official':
         specifier: workspace:^
         version: link:../../client/ui-brand-official
@@ -2028,7 +2028,7 @@ importers:
         specifier: ^18.2.0
         version: 18.3.1(react@18.3.1)
 
-  packages/client/ui-brand-custom:
+  packages/client/ui-brand-kasyun:
     devDependencies:
       '@deepseek-ai/cordis':
         specifier: workspace:^
@@ -2036,9 +2036,6 @@ importers:
       '@deepseek-ai/dsh-client-locale':
         specifier: workspace:^
         version: link:../locale
-      '@deepseek-ai/dsh-client-ui-primitives':
-        specifier: workspace:^
-        version: link:../ui-primitives
       '@deepseek-ai/dsh-client-ui-renderer':
         specifier: workspace:^
         version: link:../ui-renderer

@@ -43,7 +43,7 @@ The kernel packages boot and serve the page; the UI feature packages present it.
 | [`ui-layout/`](ui-layout/README.md) | Arranges the main application regions | — |
 | [`ui-sidebar/`](ui-sidebar/README.md) | Presents workspace and session navigation | — |
 | [`ui-brand-official/`](ui-brand-official/README.md) | Fills the generic browser-brand slots with the official name and marks | — |
-| [`ui-brand-custom/`](ui-brand-custom/README.md) | Fills the sidebar brand slots with a deployment-owned mark and name in non-official builds | — |
+| [`ui-brand-kasyun/`](ui-brand-kasyun/README.md) | Fills the sidebar brand slots with the Kasyun Soft mark and name in non-official builds | — |
 | [`ui-workspace/`](ui-workspace/README.md) | Provides workspace selection and creation surfaces | — |
 | [`ui-conversation/`](ui-conversation/README.md) | Presents the active conversation and its input surface | — |
 | [`ui-chat/`](ui-chat/README.md) | Projects and renders the Chat conversation target | — |

@@ -5,10 +5,10 @@ import { cleanup, render } from '@testing-library/react'
 import { SlotRegistry } from '@deepseek-ai/dsh-client-ui-renderer/client'
 import { LocaleRuntime } from '@deepseek-ai/dsh-client-locale/client'
 import type { PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
-import { FISH_LOGO_VIEWBOX } from '@deepseek-ai/dsh-client-ui-primitives'
 import { apply, inject } from '../src/client/index.ts'
-import { buildStamp, CustomBrandMark, CustomBrandName, type CustomBrandNameProps } from '../src/client/Brand.tsx'
+import { buildStamp, KasyunBrandMark, KasyunBrandName, type KasyunBrandNameProps } from '../src/client/Brand.tsx'
 import { en, ja, zh } from '../src/client/locales.ts'
+import { KASYUN_MARK_GRADIENT, KASYUN_MARK_VIEWBOX } from '../src/client/mark.ts'
 import { apply as hostApply } from '../src/index.ts'
 
 afterEach(() => {
@@ -24,8 +24,8 @@ const HOLES = [
 const HERO_HOLE = 'conversation.hero.brand.mark'
 
 /** The name occupant reads only its translate seat; the standard hooks stay unexercised here. */
-function nameProps(t: (key: string) => string): CustomBrandNameProps {
-  return { t } as unknown as CustomBrandNameProps
+function nameProps(t: (key: string) => string): KasyunBrandNameProps {
+  return { t } as unknown as KasyunBrandNameProps
 }
 
 /** The mark occupant reads only the requested size; the standard hooks stay unexercised here. */
@@ -47,7 +47,7 @@ async function bench(declare = true) {
   return { ctx, slots, locale, declareHoles, disposeHoles }
 }
 
-describe('custom browser-brand plugin', () => {
+describe('Kasyun browser-brand plugin', () => {
   it('keeps the host Loader entry inert', () => {
     expect(hostApply).not.toThrow()
   })
@@ -101,15 +101,27 @@ describe('custom browser-brand plugin', () => {
     expect(t('brand.name')).toBe(ja['brand.name'])
   })
 
-  it('renders the official whale geometry in brand blue at every requested width', () => {
-    const mark = render(<CustomBrandMark {...markProps(34)} />)
+  it('renders the site mark with its gradient at every requested width', () => {
+    const mark = render(<KasyunBrandMark {...markProps(34)} />)
     const svg = mark.container.querySelector('svg')
-    expect(svg?.getAttribute('viewBox')).toBe(`0 0 ${FISH_LOGO_VIEWBOX.width} ${FISH_LOGO_VIEWBOX.height}`)
+    expect(svg?.getAttribute('viewBox')).toBe(`0 0 ${KASYUN_MARK_VIEWBOX.width} ${KASYUN_MARK_VIEWBOX.height}`)
     expect(svg?.getAttribute('width')).toBe('34')
-    expect(Number(svg?.getAttribute('height'))).toBeCloseTo((34 * FISH_LOGO_VIEWBOX.height) / FISH_LOGO_VIEWBOX.width)
-    expect(svg?.querySelector('path')?.getAttribute('fill')).toMatch(/^var\(--dsw-alias-brand-primary/)
-    mark.rerender(<CustomBrandMark {...markProps(24)} />)
+    expect(Number(svg?.getAttribute('height'))).toBeCloseTo((34 * KASYUN_MARK_VIEWBOX.height) / KASYUN_MARK_VIEWBOX.width)
+    const gradient = svg?.querySelector('linearGradient')
+    expect(gradient?.querySelectorAll('stop')).toHaveLength(KASYUN_MARK_GRADIENT.length)
+    const path = svg?.querySelector('path')
+    expect(path?.getAttribute('fill')).toBe(`url(#${gradient?.id})`)
+    expect(path?.getAttribute('fill-rule')).toBe('evenodd')
+    mark.rerender(<KasyunBrandMark {...markProps(24)} />)
     expect(mark.container.querySelector('svg')?.getAttribute('width')).toBe('24')
+  })
+
+  it('gives each mounted mark its own gradient id', () => {
+    const both = render(<><KasyunBrandMark {...markProps(24)} /><KasyunBrandMark {...markProps(24)} /></>)
+    const ids = [...both.container.querySelectorAll('linearGradient')].map(node => node.id)
+    expect(ids).toHaveLength(2)
+    expect(new Set(ids).size).toBe(2)
+    for (const id of ids) expect(id).toMatch(/^kasyun-mark-[^:]+$/)
   })
 
   it('renders the name, its tag badge, and the build stamp the bundle carries', () => {
@@ -117,7 +129,7 @@ describe('custom browser-brand plugin', () => {
     vi.stubEnv('DSH_CLIENT_COMMIT_HASH', 'abc1234')
     vi.stubEnv('DSH_CLIENT_GIT_DIRTY', 'true')
     const t = (key: string) => `[${key}]`
-    const name = render(<CustomBrandName {...nameProps(t)} />)
+    const name = render(<KasyunBrandName {...nameProps(t)} />)
     expect(name.getByText('[brand.name]')).toBeTruthy()
     expect(name.getByText('[brand.tag]')).toBeTruthy()
     expect(name.getByText('1.2.3-abc1234-dirty')).toBeTruthy()
@@ -127,7 +139,7 @@ describe('custom browser-brand plugin', () => {
     vi.stubEnv('DSH_CLIENT_VERSION', undefined)
     expect(buildStamp()).toBeUndefined()
     const t = (key: string) => key
-    const name = render(<CustomBrandName {...nameProps(t)} />)
+    const name = render(<KasyunBrandName {...nameProps(t)} />)
     expect(name.container.textContent).toBe('brand.namebrand.tag')
 
     vi.stubEnv('DSH_CLIENT_VERSION', '1.2.3')

@@ -10,11 +10,11 @@ Status: implemented
 
 ## Decision
 
-`packages/client/ui-brand-custom`（`@deepseek-ai/dsh-client-ui-brand-custom`）占据两个侧栏品牌槽位，并在 web-app bundle 中挂载于官方包旁边。它的注册门控恰好是官方包门控的补集：当 `DSH_CLIENT_BUILD_PROFILE === 'official'` 时 `apply` 直接返回，因此两行永远不会注册进同一个格子，也不需要优先级仲裁。两个填充作为一组声明感知的集合安装（嵌套 `ctx.slots.inject`、生成器 yield 出的注册），无论侧栏在本行之前还是之后声明都能到位，并在释放时一并离开。
+`packages/client/ui-brand-kasyun`（`@deepseek-ai/dsh-client-ui-brand-kasyun`）以嘉迅软件的品牌占据两个侧栏品牌槽位，并在 web-app bundle 中挂载于官方包旁边。它的注册门控恰好是官方包门控的补集：当 `DSH_CLIENT_BUILD_PROFILE === 'official'` 时 `apply` 直接返回，因此两行永远不会注册进同一个格子，也不需要优先级仲裁。两个填充作为一组声明感知的集合安装（嵌套 `ctx.slots.inject`、生成器 yield 出的注册），无论侧栏在本行之前还是之后声明都能到位，并在释放时一并离开。
 
-标志复用官方鲸鱼几何（`dsh-client-ui-primitives` 为组合标志导出的 `FISH_LOGO_PATH` 与 `FISH_LOGO_VIEWBOX`），以主题的 DeepSeek 品牌蓝别名（`--dsw-alias-brand-primary-new-colorprimary-new-color`）填充，因此侧栏显示的是 DeepSeek 的蓝色鲸鱼，而外壳回退显示的是同一轮廓的墨色版本。名称以 `brand` locale 命名空间注册：`brand.name` 旁边是 `brand.tag` 徽章（`HARNESS`，仿官方字标 svg 里画死的那块徽章——它是 `BrandWordmark` 内部的图形而非组件，这正是此前任何非官方构建都看不到它的原因），下方是与外壳回退相同的构建戳——版本、提交、`dirty`——数据来自客户端 tsdown 预设烘焙进每个 bundle 的 `DSH_CLIENT_*` define。随包发布的是占位名称值（`DSH Custom` 及其 zh/ja 对应项）；部署方编辑 `Brand.tsx` 与 `locales.ts`。
+标志是 `https://www.kasyunsoft.com/assets/mark.svg` 里的轮廓——一条 evenodd 路径、五个直边子路径——平移到包围盒起于原点（`KASYUN_MARK_PATH`，viewBox `382.53 × 216.07`），以网站的九色标蓝到绿渐变填充；渐变定义在标志自己的 svg 内，id 由 `useId` 派生，因为展开行与折叠 rail 会同时挂载这个标志。名称以 `brand` locale 命名空间注册：`brand.name`（`KASYUN` / `嘉迅` / `嘉迅`）旁边是 `brand.tag` 徽章（`HARNESS`，仿官方字标 svg 里画死的那块徽章——它是 `BrandWordmark` 内部的图形而非组件，这正是此前任何非官方构建都看不到它的原因），下方是与外壳回退相同的构建戳——版本、提交、`dirty`——数据来自客户端 tsdown 预设烘焙进每个 bundle 的 `DSH_CLIENT_*` define。
 
-`apps/web/tests/built-boot.expected.e2e.ts` 是真实组合测试：其非官方分支现在断言品牌蓝鲸鱼、`HARNESS` 徽章出现、本地构建标签缺席；官方分支保持不变。
+`apps/web/tests/built-boot.expected.e2e.ts` 是真实组合测试：其非官方分支现在断言嘉迅标志、`KASYUN` 名称、`HARNESS` 徽章出现、本地构建标签缺席；官方分支保持不变。
 
 ## Alternatives considered
 
@@ -26,8 +26,12 @@ Status: implemented
 
 **只有名称，不带构建戳。** 更简单，但本地构建会丢掉回退原本携带的提交戳，而那正是测试部署从这一行需要的唯一信息。
 
-**自绘的几何标志。** 第一版发布的是圆角方块加四角星。替换的原因是需求是一个符合 DeepSeek 自身标准的标志，而导出的鲸鱼几何加品牌蓝 token 无需新作画即可满足；`BRAND_GUIDELINES.md` 是商标使用文档而非视觉规范，包 README 已指引非 DeepSeek 的部署替换轮廓。
+**DeepSeek 品牌蓝的官方鲸鱼。** 第二版复用了 `FISH_LOGO_PATH` 加主题的品牌蓝别名。替换的原因是 `BRAND_GUIDELINES.md` 要求非 DeepSeek 自身的部署不要把官方标志呈现为官方背书，而这个部署在自己的网站上有自己的标志。
+
+**通用包名（`ui-brand-custom`）加占位值。** 前两版以模板形态发布。改名的原因是本包现在承载的是一个部署的真实标志与名称，模板名会误述它；别的部署应当把自己的包组合进同样的槽位，而不是编辑这一个。
+
+**跟随主题的单色而非网站渐变。** `currentColor` 或品牌 token 会与侧栏其他图标一致，但渐变正是这个标志的识别部分；去掉之后轮廓只是一个无名的角形。
 
 ## Consequences
 
-非官方构建显示自定义品牌而非鱼形标志与本地构建标签；e2e 期望随之移动。更换品牌是源码编辑加 bundle 重建，而非配置——已记为已知限制。本包新增一个 `brand` locale 命名空间，并给 web-app 名单及其依赖列表各增加一行。覆盖由本包自己的 `browser-plugin.client.spec.tsx`（两侧门控、先后声明、释放、字典、戳格式）加上发布组合的装配启动 e2e 承担。
+非官方构建显示嘉迅品牌而非鱼形标志与本地构建标签；e2e 期望随之移动。更换品牌是源码编辑加 bundle 重建，而非配置——已记为已知限制，与主题无关的渐变也是。本包新增一个 `brand` locale 命名空间，并给 web-app 名单及其依赖列表各增加一行。覆盖由本包自己的 `browser-plugin.client.spec.tsx`（两侧门控、先后声明、释放、字典、渐变与 id 唯一性、戳格式）加上发布组合的装配启动 e2e 承担。

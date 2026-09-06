@@ -1,12 +1,10 @@
-import { FISH_LOGO_PATH, FISH_LOGO_VIEWBOX } from '@deepseek-ai/dsh-client-ui-primitives'
+import { useId } from 'react'
 import type { PropsLocale, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
 import css from './Brand.module.css'
+import { KASYUN_MARK_GRADIENT, KASYUN_MARK_PATH, KASYUN_MARK_VIEWBOX } from './mark.ts'
 
 /** Props of the brand-name occupant: the empty owner share plus the `brand` translate seat. */
-export type CustomBrandNameProps = PropsRuntime<'sidebar.brand.name'> & PropsLocale<'brand'>
-
-/** Theme alias of the DeepSeek brand blue (light and dark values live in ui-theme). */
-const BRAND_BLUE = 'var(--dsw-alias-brand-primary-new-colorprimary-new-color)'
+export type KasyunBrandNameProps = PropsRuntime<'sidebar.brand.name'> & PropsLocale<'brand'>
 
 /**
  * Format the build stamp shown under the name: version, then commit, then a
@@ -22,34 +20,40 @@ export function buildStamp(): string | undefined {
 }
 
 /**
- * Render the deployment mark at the width the host surface requests: the
- * official whale silhouette (the geometry `dsh-client-ui-primitives` exports
- * for composed marks) filled with the theme's DeepSeek brand blue, where the
- * shell fallback draws the same silhouette in ink. Height follows the
- * silhouette's own ratio.
+ * Render the Kasyun Soft mark at the width the host surface requests, filled
+ * with the site's blue-to-green gradient; height follows the mark's own
+ * ratio. The gradient id comes from `useId`, since the expanded brand row and
+ * the collapsed rail mount this mark at the same time.
  * @param props - Host-supplied mark presentation.
  * @returns the decorative mark svg.
  */
-export function CustomBrandMark({ size }: PropsRuntime<'sidebar.brand.mark'>) {
+export function KasyunBrandMark({ size }: PropsRuntime<'sidebar.brand.mark'>) {
+  // `url(#…)` is parsed as a CSS url token; React's `:r0:` ids need the colons stripped.
+  const gradientId = `kasyun-mark-${useId().replaceAll(':', '')}`
   return (
     <svg
       width={size}
-      height={(size * FISH_LOGO_VIEWBOX.height) / FISH_LOGO_VIEWBOX.width}
-      viewBox={`0 0 ${FISH_LOGO_VIEWBOX.width} ${FISH_LOGO_VIEWBOX.height}`}
+      height={(size * KASYUN_MARK_VIEWBOX.height) / KASYUN_MARK_VIEWBOX.width}
+      viewBox={`0 0 ${KASYUN_MARK_VIEWBOX.width} ${KASYUN_MARK_VIEWBOX.height}`}
       fill="none"
       aria-hidden="true"
     >
-      <path d={FISH_LOGO_PATH} fill={BRAND_BLUE} />
+      <defs>
+        <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="0">
+          {KASYUN_MARK_GRADIENT.map(([offset, color]) => <stop key={offset} offset={offset} stopColor={color} />)}
+        </linearGradient>
+      </defs>
+      <path d={KASYUN_MARK_PATH} fill={`url(#${gradientId})`} fillRule="evenodd" />
     </svg>
   )
 }
 
 /**
- * Render the deployment name with its tag badge, over the build stamp.
+ * Render the Kasyun name with its tag badge, over the build stamp.
  * @param props - The `brand` translate seat.
  * @returns the name column.
  */
-export function CustomBrandName({ t }: CustomBrandNameProps) {
+export function KasyunBrandName({ t }: KasyunBrandNameProps) {
   const stamp = buildStamp()
   return (
     <span className={css.brand}>
