@@ -4,6 +4,31 @@ import { snapshotJsonValue } from '@deepseek-ai/dsh-util-values'
 import { decodeWorkerJson, encodeWorkerJson, snapshotCodeJsonValue } from '../src/worker-json.ts'
 
 describe('snapshotCodeJsonValue', () => {
+  it('accepts intrinsic prototypes under the JavaScriptCore native-source spelling', () => {
+    const original: (this: unknown) => string = Reflect.get(Function.prototype, 'toString')
+    Object.defineProperty(Function.prototype, 'toString', {
+      configurable: true,
+      writable: true,
+      value: function toString(this: unknown): string {
+        return this === Object || this === Array
+          ? `function ${(this as { name: string }).name}() {\n    [native code]\n}`
+          : original.call(this)
+      },
+    })
+    try {
+      expect(snapshotCodeJsonValue({ value: [1, { nested: 'x' }] })).toEqual({ value: [1, { nested: 'x' }] })
+      const spoofedPrototype = Object.create(null) as Record<string, unknown>
+      const SpoofedObject = function Object() {}
+      SpoofedObject.prototype = spoofedPrototype
+      Object.defineProperty(spoofedPrototype, 'constructor', { value: SpoofedObject })
+      expect(snapshotCodeJsonValue(Object.create(spoofedPrototype))).toBeUndefined()
+    } finally {
+      Object.defineProperty(Function.prototype, 'toString', {
+        configurable: true, writable: true, value: original,
+      })
+    }
+  })
+
   it('matches the canonical scalar boundary', () => {
     const unsupported = [undefined, 1n, Symbol('value'), () => 1]
     for (const value of [null, false, 'text', 1.25, -0, Number.NaN, Number.POSITIVE_INFINITY, ...unsupported]) {
