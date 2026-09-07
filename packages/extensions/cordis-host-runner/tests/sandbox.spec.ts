@@ -26,6 +26,32 @@ describe('dynamic tool declaration boundary', () => {
     expect(() => sandboxDefineTool(definition)).toThrow(message)
   })
 
+  it('accepts intrinsic schema arrays under the JavaScriptCore native-source spelling', () => {
+    const original: (this: unknown) => string = Reflect.get(Function.prototype, 'toString')
+    Object.defineProperty(Function.prototype, 'toString', {
+      configurable: true,
+      writable: true,
+      value: function toString(this: unknown): string {
+        return this === Object || this === Array
+          ? `function ${(this as { name: string }).name}() {\n    [native code]\n}`
+          : original.call(this)
+      },
+    })
+    try {
+      expect(() => sandboxDefineTool({
+        name: 'engine-spelling',
+        description: 'intrinsic arrays under a multi-line native source',
+        parameters: { type: 'object', properties: { a: { type: 'string' } }, required: ['a'] },
+        output: { schema: { type: 'string' }, render: () => ['ok'] },
+        execute: async () => 'ok',
+      })).not.toThrow()
+    } finally {
+      Object.defineProperty(Function.prototype, 'toString', {
+        configurable: true, writable: true, value: original,
+      })
+    }
+  })
+
   it('bounds the preview of an invalid dynamic renderer return', () => {
     const definition = sandboxDefineTool({
       name: 'invalid-renderer',

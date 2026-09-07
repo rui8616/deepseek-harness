@@ -14,6 +14,17 @@ export function assertNever(value: never, context?: string): never {
   throw new Error(`unreachable variant${context ? ` in ${context}` : ''}: ${rendered}`)
 }
 
+/**
+ * NativeFunction source per ECMA-262 `Function.prototype.toString`: the
+ * grammar fixes the tokens but leaves whitespace to the engine, so V8's
+ * single-line and JavaScriptCore's and SpiderMonkey's multi-line spellings
+ * all match while a compiled user function never does.
+ */
+const NATIVE_CONSTRUCTOR_SOURCE = {
+  Array: /^function\s+Array\s*\(\s*\)\s*\{\s*\[native code\]\s*\}$/,
+  Object: /^function\s+Object\s*\(\s*\)\s*\{\s*\[native code\]\s*\}$/,
+} as const
+
 /** Whether a realm-owned intrinsic prototype is backed by its native constructor. */
 function hasIntrinsicConstructor(prototype: object, name: 'Array' | 'Object'): boolean {
   const descriptor = Object.getOwnPropertyDescriptor(prototype, 'constructor')
@@ -22,7 +33,7 @@ function hasIntrinsicConstructor(prototype: object, name: 'Array' | 'Object'): b
   try {
     return constructor.name === name
       && constructor.prototype === prototype
-      && Function.prototype.toString.call(constructor) === `function ${name}() { [native code] }`
+      && NATIVE_CONSTRUCTOR_SOURCE[name].test(Function.prototype.toString.call(constructor))
   } catch {
     return false
   }

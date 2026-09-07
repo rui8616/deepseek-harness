@@ -9,6 +9,7 @@ import type { CodeJsonValue } from '@deepseek-ai/dsh-code-runtime'
 type IntrinsicCallable = (this: unknown, ...args: unknown[]) => unknown
 
 const intrinsicFunctionToString = Reflect.get(Function.prototype, 'toString') as IntrinsicCallable
+const intrinsicRegExpTest = Reflect.get(RegExp.prototype, 'test') as IntrinsicCallable
 const intrinsicReflectApply = Reflect.get(Reflect, 'apply') as (
   target: IntrinsicCallable,
   thisArgument: unknown,
@@ -79,6 +80,12 @@ function setDelete<T>(target: Set<T>, value: T): void {
   intrinsicReflectApply(intrinsicSetDelete, target, [value])
 }
 
+/** NativeFunction source per ECMA-262: fixed tokens, engine-chosen whitespace. */
+const NATIVE_CONSTRUCTOR_SOURCE = {
+  Array: /^function\s+Array\s*\(\s*\)\s*\{\s*\[native code\]\s*\}$/,
+  Object: /^function\s+Object\s*\(\s*\)\s*\{\s*\[native code\]\s*\}$/,
+} as const
+
 /** Whether a realm-owned intrinsic prototype is backed by its native constructor. */
 function hasIntrinsicConstructor(prototype: object, name: 'Array' | 'Object'): boolean {
   const descriptor = intrinsicObjectGetOwnPropertyDescriptor(prototype, 'constructor')
@@ -87,7 +94,11 @@ function hasIntrinsicConstructor(prototype: object, name: 'Array' | 'Object'): b
   try {
     return constructor.name === name
       && constructor.prototype === prototype
-      && intrinsicReflectApply(intrinsicFunctionToString, constructor, []) === `function ${name}() { [native code] }`
+      && intrinsicReflectApply(
+        intrinsicRegExpTest,
+        NATIVE_CONSTRUCTOR_SOURCE[name],
+        [intrinsicReflectApply(intrinsicFunctionToString, constructor, [])],
+      ) === true
   } catch {
     return false
   }

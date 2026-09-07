@@ -39,6 +39,12 @@ function isPlainRecord(value: unknown): value is Record<string, unknown> {
 }
 
 /* jscpd:ignore-start -- this VM boundary mirrors the session-owned realm-safe intrinsic test */
+/** NativeFunction source per ECMA-262: fixed tokens, engine-chosen whitespace. */
+const NATIVE_CONSTRUCTOR_SOURCE = {
+  Array: /^function\s+Array\s*\(\s*\)\s*\{\s*\[native code\]\s*\}$/,
+  Object: /^function\s+Object\s*\(\s*\)\s*\{\s*\[native code\]\s*\}$/,
+} as const
+
 /** Whether a realm-owned intrinsic prototype is backed by its native constructor. */
 function hasIntrinsicConstructor(prototype: object, name: 'Array' | 'Object'): boolean {
   const descriptor = Object.getOwnPropertyDescriptor(prototype, 'constructor')
@@ -47,7 +53,7 @@ function hasIntrinsicConstructor(prototype: object, name: 'Array' | 'Object'): b
   try {
     return constructor.name === name
       && constructor.prototype === prototype
-      && Function.prototype.toString.call(constructor) === `function ${name}() { [native code] }`
+      && NATIVE_CONSTRUCTOR_SOURCE[name].test(Function.prototype.toString.call(constructor))
   } catch {
     return false
   }

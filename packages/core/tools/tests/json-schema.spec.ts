@@ -253,6 +253,30 @@ describe('the enforced raw JSON Schema subset', () => {
     expect(violationsOf({ type: 'object', properties: { at: new Date(0) } }))
       .toEqual(['schema.properties.at must be a schema object'])
 
+    // JavaScriptCore and SpiderMonkey render native constructors multi-line;
+    // an intrinsic schema object must still pass under that spelling.
+    const original: (this: unknown) => string = Reflect.get(Function.prototype, 'toString')
+    Object.defineProperty(Function.prototype, 'toString', {
+      configurable: true,
+      writable: true,
+      value: function toString(this: unknown): string {
+        return this === Object || this === Array
+          ? `function ${(this as { name: string }).name}() {\n    [native code]\n}`
+          : original.call(this)
+      },
+    })
+    try {
+      expect(() => {
+        assertSupportedJsonSchema({ type: 'object', properties: { a: leaf }, required: ['a'] })
+      }).not.toThrow()
+      expect(violationsOf(recordWithForgedIntrinsicPrototype({ type: 'string' })))
+        .toEqual(['schema must be a schema object'])
+    } finally {
+      Object.defineProperty(Function.prototype, 'toString', {
+        configurable: true, writable: true, value: original,
+      })
+    }
+
     const forgedSchema = recordWithForgedIntrinsicPrototype(
       { type: 'object' },
       { oneOf: [{ type: 'string' }, { type: 'null' }] },
