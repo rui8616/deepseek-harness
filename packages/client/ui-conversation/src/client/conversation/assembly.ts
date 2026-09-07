@@ -146,6 +146,7 @@ class BoundConversation implements ConversationBinding {
       }
       case 'settle-assistant':
         return this.assembler.settleAssistant(change.attemptId, change.entry)
+      /* v8 ignore next 2 -- every published non-replace change kind is handled above */
       default:
         return assertNever(change)
     }
