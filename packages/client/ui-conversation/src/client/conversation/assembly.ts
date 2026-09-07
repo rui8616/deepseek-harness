@@ -2,9 +2,10 @@
 import { Service, type Context } from '@deepseek-ai/cordis'
 import type { ImageAttachmentRef } from '@deepseek-ai/dsh-attachment'
 import type {
-  ISessions, SessionBinding, SessionEventSource, SessionEventWindow,
+  ISessions, SessionBinding, SessionEventChange, SessionEventSource, SessionEventWindow,
 } from '@deepseek-ai/dsh-api-session-controller/client'
 import type { SessionEvent, SessionId } from '@deepseek-ai/dsh-session/types'
+import { assertNever } from '@deepseek-ai/dsh-util-values'
 import {
   createSnapshotStore, type ObservableSnapshot, type SnapshotStore,
 } from '@deepseek-ai/dsh-client-store'
@@ -90,37 +91,63 @@ class BoundConversation implements ConversationBinding {
     this.disposeFeed()
   }
 
+  /** Adopt the accepted revision only after assembly succeeded: a throw leaves
+   *  this binding behind the feed, so the next window is non-contiguous and
+   *  routes back through {@link replace} instead of extending broken state. */
   private replace(window: SessionEventWindow): void {
+    const publication = this.assembler.replaceWindow(window.entries, window.hasMore)
     this.revision = window.revision
-    this.publish(this.assembler.replaceWindow(window.entries, window.hasMore))
+    this.publish(publication)
   }
 
   private accept(window: SessionEventWindow): void {
     if (window.revision === this.revision) return
-    if (window.revision !== this.revision + 1 || window.change.kind === 'replace') {
+    const change = window.change
+    if (window.revision !== this.revision + 1 || change.kind === 'replace') {
+      this.replace(window)
+      return
+    }
+    let publication: ConversationPublication
+    try {
+      publication = this.applyChange(change, window.hasMore)
+    } catch (error) {
+      // The feed swallows subscriber failures, so an incremental assembly
+      // throw would otherwise strand this view at the failing revision while
+      // every later window still arrives contiguous. Rebuilding from the whole
+      // window drops the partially applied change and resumes the tail.
+      console.error('[ui-conversation] incremental assembly failed; rebuilding the window:', error)
       this.replace(window)
       return
     }
     this.revision = window.revision
-    switch (window.change.kind) {
+    this.publish(publication)
+  }
+
+  /**
+   * Apply one contiguous non-replace change.
+   * @param change - published window change, already known not to be a replacement.
+   * @param hasMore - whether older history remains outside the window.
+   * @returns the highest requested publication cadence; a throw leaves assembly partial.
+   */
+  private applyChange(
+    change: Exclude<SessionEventChange, { readonly kind: 'replace' }>,
+    hasMore: boolean,
+  ): ConversationPublication {
+    switch (change.kind) {
       case 'prepend':
-        this.publish(this.assembler.prepend(window.change.entries, window.hasMore))
-        return
+        return this.assembler.prepend(change.entries, hasMore)
       case 'append': {
         let publication: ConversationPublication = 'none'
-        for (const event of window.change.entries) {
+        for (const event of change.entries) {
           const next = this.assembler.append(event)
           if (next === 'immediate' || publication === 'none') publication = next
         }
-        this.publish(publication)
-        return
+        return publication
       }
       case 'settle-assistant':
-        this.publish(this.assembler.settleAssistant(
-          window.change.attemptId,
-          window.change.entry,
-        ))
-        return
+        return this.assembler.settleAssistant(change.attemptId, change.entry)
+      default:
+        return assertNever(change)
     }
   }
 
