@@ -13,7 +13,46 @@ function objectWithForgedIntrinsicPrototype(revoked = false): Record<string, unk
   return Object.assign(Object.create(prototype) as Record<string, unknown>, { value: 1 })
 }
 
+/**
+ * Run `body` while `Function.prototype.toString` renders the intrinsic
+ * constructors the way the named engine does; every other function keeps its
+ * real source.
+ */
+function withNativeSourceSpelling(spelling: (name: string) => string, body: () => void): void {
+  const original: (this: unknown) => string = Reflect.get(Function.prototype, 'toString')
+  Object.defineProperty(Function.prototype, 'toString', {
+    configurable: true,
+    writable: true,
+    value: function toString(this: unknown): string {
+      return this === Object || this === Array
+        ? spelling((this as { name: string }).name)
+        : original.call(this)
+    },
+  })
+  try {
+    body()
+  } finally {
+    Object.defineProperty(Function.prototype, 'toString', {
+      configurable: true, writable: true, value: original,
+    })
+  }
+}
+
 describe('snapshotJsonValue', () => {
+  it('accepts intrinsic prototypes under every engine spelling of a native constructor', () => {
+    const javaScriptCore = (name: string): string => `function ${name}() {\n    [native code]\n}`
+    const spiderMonkey = (name: string): string => `function ${name}() {\n    [native code]\n}`
+    for (const spelling of [javaScriptCore, spiderMonkey]) {
+      withNativeSourceSpelling(spelling, () => {
+        expect(snapshotJsonValue({ value: [1, { nested: 'x' }] })).toEqual({ value: [1, { nested: 'x' }] })
+        expect(snapshotJsonValue(objectWithForgedIntrinsicPrototype())).toBeUndefined()
+      })
+    }
+    // A user function whose name is spoofed to `Object` still renders its own
+    // compiled source, which never matches the NativeFunction grammar.
+    expect(snapshotJsonValue(objectWithForgedIntrinsicPrototype())).toBeUndefined()
+  })
+
   it('copies the complete JSON scalar vocabulary and rejects unsupported scalars', () => {
     const unsupportedFunction = (): void => {}
 
