@@ -1,7 +1,7 @@
 import { Context } from '@deepseek-ai/cordis'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { SessionSeq } from '@deepseek-ai/dsh-session/types'
-import type { SessionId } from '@deepseek-ai/dsh-session/types'
+import type { SessionEvent, SessionId } from '@deepseek-ai/dsh-session/types'
 import { createAssistantMessage, LlmAttemptId } from '@deepseek-ai/dsh-llm'
 import { createSnapshotStore } from '@deepseek-ai/dsh-client-store'
 import {
@@ -408,5 +408,68 @@ describe('Conversation registries', () => {
     expect(trajectorySource.getSnapshot()).toBeUndefined()
     expect(trajectoryListener).toHaveBeenCalledTimes(2)
     unsubscribeTrajectory()
+  })
+  it('rebuilds the window when incremental assembly throws instead of stranding the view', async () => {
+    const errors = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const { uiConversation, binding, events, views } = await bootRegistries()
+    const built: (number | undefined)[] = []
+    let failuresLeft = 1
+    const definition: ConversationNodeDefinition<number> = {
+      kind: 'throwing-probe',
+      target: 'chat',
+      match: event => event.type === 'turn/start'
+        ? { id: String(event.data.turn), role: 'start' }
+        : event.type === 'assistant/message'
+          ? { id: String(event.data.turn), role: 'update' }
+          : null,
+      start: () => 0,
+      update: (context, match) => {
+        // One transient failure: the rebuild replays the same Match and succeeds,
+        // so the assertion separates recovery from never having failed.
+        if (match.event.seq === 2 && failuresLeft > 0) {
+          failuresLeft--
+          throw new Error('assembly probe failure')
+        }
+        return context.state + 1
+      },
+      publication: () => 'immediate',
+      buildViewNode: (context) => {
+        built.push(context.state)
+        return { key: context.key, kind: 'throwing-probe', id: context.id, target: 'chat', data: context.state }
+      },
+    }
+    events.register(definition)
+    views.register(viewDefinition('chat'))
+    await Promise.resolve()
+    const conversation = uiConversation.binding(binding)
+    conversation.activate('chat')
+    const source = binding.eventSource as MutableSessionEventSource
+    const append = (event: SessionEvent): void => {
+      source.append({ type: 'event', event })
+    }
+
+    append({ seq: SessionSeq(1), time: 1, type: 'turn/start', data: { turn: 1 } })
+    const assistantMessage = (seq: number, step: number): SessionEvent => ({
+      seq: SessionSeq(seq),
+      time: seq,
+      type: 'assistant/message',
+      data: {
+        turn: 1,
+        step,
+        message: createAssistantMessage({
+          content: [],
+          source: { provider: 'test', model: 'test' },
+        }),
+        stream: [],
+      },
+      surfaceOp: 'append',
+    })
+    append(assistantMessage(2, 1))
+    append(assistantMessage(3, 2))
+
+    expect(errors).toHaveBeenCalledOnce()
+    expect(errors.mock.calls[0]?.[0]).toContain('incremental assembly failed')
+    // Both updates are represented: the rebuild recovered seq 2 and seq 3 applied on top.
+    expect(built.at(-1)).toBe(2)
   })
 })
