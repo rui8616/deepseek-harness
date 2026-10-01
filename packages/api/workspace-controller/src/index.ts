@@ -35,10 +35,16 @@ export interface Config {
   documentsDirectory?: string
   /** Maximum duration of the operating system's Documents lookup. */
   documentsLookupTimeoutMs?: number
+  /**
+   * Kasyun: create `<Documents>/deepseek-harness/default-workspace` on first
+   * use. Off by default, so a fresh installation starts without a Workspace
+   * and the user adds one; `true` restores the upstream behaviour.
+   */
+  createDefaultWorkspace?: boolean
 }
 
 /** Directory policy after schema defaults have been applied. */
-type ResolvedConfig = Config & { documentsLookupTimeoutMs: number }
+type ResolvedConfig = Config & { documentsLookupTimeoutMs: number; createDefaultWorkspace: boolean }
 
 declare module '@deepseek-ai/cordis' {
   interface Context {
@@ -54,6 +60,7 @@ export class WorkspaceController extends TypertRemoteService {
   static Config: z<Config, ResolvedConfig> = z.object({
     documentsDirectory: z.string(),
     documentsLookupTimeoutMs: z.natural().min(1).default(10_000),
+    createDefaultWorkspace: z.boolean().default(false),
   })
 
   private readonly config: ResolvedConfig
@@ -97,6 +104,8 @@ export class WorkspaceController extends TypertRemoteService {
    */
   @Remote('initializeDefault')
   async initializeDefault(signal: AbortSignal): Promise<WorkspaceValue | undefined> {
+    // Kasyun: leave the first Workspace to the user unless the deployment opts in.
+    if (!this.config.createDefaultWorkspace) return undefined
     const workspace = await this.ctx.workspaceRegistry.initializeDefault(async () => {
       const timeout = AbortSignal.timeout(this.config.documentsLookupTimeoutMs)
       return await defaultWorkspaceDirectory(

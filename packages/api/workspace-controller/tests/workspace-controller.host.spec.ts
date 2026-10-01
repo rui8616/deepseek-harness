@@ -50,7 +50,7 @@ function deferred<T>(): Deferred<T> {
   return { promise, resolve }
 }
 
-async function harness(options: { systemDocuments?: boolean } = {}) {
+async function harness(options: { systemDocuments?: boolean; createDefaultWorkspace?: boolean } = {}) {
   const root = realpathSync.native(mkdtempSync(join(tmpdir(), 'dsh-workspace-controller-')))
   tempDirs.push(root)
   const ctx = new Context()
@@ -68,7 +68,10 @@ async function harness(options: { systemDocuments?: boolean } = {}) {
     lookups: { configure: () => dispose },
     contexts: { configureHost: () => dispose },
   } as never)
-  const controller = new WorkspaceController(ctx, options.systemDocuments === true ? {} : { documentsDirectory: root })
+  const controller = new WorkspaceController(ctx, {
+    ...options.systemDocuments === true ? {} : { documentsDirectory: root },
+    ...options.createDefaultWorkspace === undefined ? {} : { createDefaultWorkspace: options.createDefaultWorkspace },
+  })
   return { controller, ctx, root, storageDomain }
 }
 
@@ -449,8 +452,17 @@ describe('WorkspaceController follow', () => {
 })
 
 describe('first-use Remote', () => {
-  it('reuses an initialized Workspace without looking up system Documents', async () => {
+  it('leaves the first Workspace to the user unless createDefaultWorkspace is set (Kasyun)', async () => {
     const { controller, ctx, root } = await harness({ systemDocuments: true })
+    const initialize = vi.spyOn(ctx.workspaceRegistry, 'initializeDefault')
+    await expect(controller.initializeDefault(new AbortController().signal)).resolves.toBeUndefined()
+    expect(initialize).not.toHaveBeenCalled()
+    expect(ctx.workspaceRegistry.list()).toEqual([])
+    expect(existsSync(join(root, 'deepseek-harness'))).toBe(false)
+  })
+
+  it('reuses an initialized Workspace without looking up system Documents', async () => {
+    const { controller, ctx, root } = await harness({ systemDocuments: true, createDefaultWorkspace: true })
     const workspace = await ctx.workspaceRegistry.initializeDefault(async () => root)
     const signal = AbortSignal.abort()
     await expect(controller.initializeDefault(signal))
@@ -458,7 +470,7 @@ describe('first-use Remote', () => {
   })
 
   it('returns a durable Workspace named after its fixed directory without allocating a Session', async () => {
-    const { controller, ctx, root } = await harness()
+    const { controller, ctx, root } = await harness({ createDefaultWorkspace: true })
     const signal = new AbortController().signal
     const result = await controller.initializeDefault(signal)
     expect(result!.workspace.path).toBe(join(root, 'deepseek-harness', DEFAULT_WORKSPACE_DIRECTORY))
@@ -469,7 +481,7 @@ describe('first-use Remote', () => {
   })
 
   it('skips ineligible first use and propagates preparation failures', async () => {
-    const { controller, ctx, root } = await harness()
+    const { controller, ctx, root } = await harness({ createDefaultWorkspace: true })
     await ctx.workspaceRegistry.create(root)
     await expect(controller.initializeDefault(new AbortController().signal))
       .resolves.toBeUndefined()

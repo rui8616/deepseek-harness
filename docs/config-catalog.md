@@ -310,6 +310,12 @@ export interface Config {
   documentsDirectory?: string
   /** Maximum duration of the operating system's Documents lookup. */
   documentsLookupTimeoutMs?: number
+  /**
+   * Kasyun: create `<Documents>/deepseek-harness/default-workspace` on first
+   * use. Off by default, so a fresh installation starts without a Workspace
+   * and the user adds one; `true` restores the upstream behaviour.
+   */
+  createDefaultWorkspace?: boolean
 }
 ```
 <!-- END GENERATED config-catalog:@deepseek-ai/dsh-api-workspace-controller -->
