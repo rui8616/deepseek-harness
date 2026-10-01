@@ -1,10 +1,11 @@
 import type { AfterPackContext, BeforePackContext } from 'app-builder-lib'
+import type { PRODUCT_NAME, PROTOCOL_SCHEME } from './scripts/brand.mjs'
 
 /** Electron-builder fields asserted by the Desktop release tests. */
 export interface DesktopElectronBuilderConfig {
   readonly appId: string
   readonly artifactName: string
-  readonly protocols: readonly [{ readonly name: 'DeepSeek Harness'; readonly schemes: readonly ['dsh'] }]
+  readonly protocols: readonly [{ readonly name: typeof PRODUCT_NAME; readonly schemes: readonly [typeof PROTOCOL_SCHEME] }]
   readonly directories: {
     readonly output: string
   }
