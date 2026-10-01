@@ -2,6 +2,7 @@
 
 import { delimiter, dirname, join, resolve } from 'node:path'
 import { runCli } from '@deepseek-ai/dsh/lib/bin.js'
+import { applyKasyunEnvironment } from './home-env.ts'
 import { installOfficeEngineResolution, runtimeArchivePath } from './office-engine.ts'
 
 /**
@@ -27,6 +28,8 @@ export async function runDesktopCli(runtimeDir: string, supportDir: string): Pro
 }
 
 if (import.meta.main) {
+  // Kasyun: the desktop's dsh command shares the application's ~/.ks home.
+  applyKasyunEnvironment()
   if (process.platform === 'win32') {
     const { installWindowsCliSignals } = await import('./windows-cli-signals.ts')
     await installWindowsCliSignals()

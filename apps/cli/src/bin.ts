@@ -9,6 +9,7 @@
 import { getDshRuntimeVersion, loadLayeredEnv, StartupError } from '@deepseek-ai/dsh-app-boot'
 import { resolveDshHome } from '@deepseek-ai/dsh-home-paths'
 import { parseDshArgs } from './args.ts'
+import { applyKasyunEnvironment } from './home-env.ts'
 import { reportStartupFailure } from './startup-diagnostics.ts'
 import type { RunProfileOptions } from './profile-boot.ts'
 
@@ -74,5 +75,7 @@ export async function runCli(options: RunCliOptions = {}): Promise<void> {
 }
 
 if (import.meta.main) {
+  // Kasyun: the terminal dsh command shares the desktop's ~/.ks home.
+  applyKasyunEnvironment()
   await runCli()
 }
